@@ -1,0 +1,240 @@
+import { CopySidebar, type AppView } from "@/components/copy/CopySidebar";
+import { GeneratorPanel } from "@/components/copy/GeneratorPanel";
+import { LibraryPanel } from "@/components/copy/LibraryPanel";
+import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/hooks/use-auth";
+import { getTemplate, TEMPLATES } from "@/lib/copy-templates";
+import { cn } from "@/lib/utils";
+import { useMutation, useQuery } from "convex/react";
+import { ConvexError } from "convex/values";
+import { LogOut, TerminalSquare } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
+
+function StatCard({
+  label,
+  value,
+  hint,
+  bar,
+}: {
+  label: string;
+  value: string | number;
+  hint: string;
+  bar?: number;
+}) {
+  return (
+    <div className="rounded-md border bg-card p-4">
+      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        <span className="text-term-green">//</span> {label}
+      </p>
+      <p className="mt-2 font-mono text-2xl font-bold tracking-tight">{value}</p>
+      <p className="mt-1 font-mono text-[11px] text-muted-foreground">{hint}</p>
+      {bar !== undefined && (
+        <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-border">
+          <div
+            className="h-full rounded-full bg-term-green transition-all"
+            style={{ width: `${Math.min(100, bar)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const addCredits = useMutation(api.usage.addCredits);
+
+  const usage = useQuery(api.usage.getUsage);
+  const copies = useQuery(api.copies.listCopies) ?? [];
+
+  const [view, setView] = useState<AppView>("gerador");
+  const [selectedId, setSelectedId] = useState(TEMPLATES[0].id);
+  const template = getTemplate(selectedId);
+
+  const credits = usage?.credits ?? null;
+  const creditsTotal = usage?.creditsTotal ?? null;
+  const pct =
+    credits !== null && creditsTotal ? Math.round((credits / creditsTotal) * 100) : 0;
+
+  const handleRecharge = async () => {
+    try {
+      await addCredits({ amount: 10 });
+      toast.success("+10 créditos adicionados (demo)");
+    } catch (error) {
+      toast.error(
+        error instanceof ConvexError ? error.message : "Não foi possível recarregar.",
+      );
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const handleSelectTemplate = (id: string) => {
+    setSelectedId(id);
+    setView("gerador");
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto flex max-w-[1440px]">
+        <CopySidebar
+          className="sticky top-0 hidden h-screen w-72 shrink-0 lg:flex"
+          view={view}
+          selectedId={selectedId}
+          onSelectTemplate={handleSelectTemplate}
+          onNavigate={setView}
+          savedCount={usage?.savedCount ?? copies.length}
+          credits={credits}
+          creditsTotal={creditsTotal}
+          userEmail={user?.email}
+          onSignOut={handleSignOut}
+          onRecharge={handleRecharge}
+        />
+
+        <main className="min-w-0 flex-1">
+          {/* Top status bar */}
+          <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-8">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <button
+                  type="button"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-md bg-term-green text-white lg:hidden"
+                  onClick={() => setView("gerador")}
+                >
+                  <TerminalSquare className="size-4" />
+                </button>
+                <p className="truncate font-mono text-xs text-muted-foreground">
+                  <span className="text-term-green">~/copyforge</span>
+                  <span className="text-term-dim">/</span>
+                  {view === "gerador" ? (
+                    <>
+                      <span className="text-term-dim">gerador/</span>
+                      <span className="text-foreground">{template.id}</span>
+                    </>
+                  ) : (
+                    <span className="text-foreground">biblioteca</span>
+                  )}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <span
+                  className={cn(
+                    "hidden items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[11px] sm:flex",
+                    credits !== null && credits <= 5
+                      ? "border-term-amber/40 bg-term-amber/10 text-term-amber"
+                      : "border-term-green/30 bg-term-soft text-term-green-deep",
+                  )}
+                >
+                  <span className="size-1.5 rounded-full bg-current" />
+                  {credits ?? "…"} créditos
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden"
+                  title="Sair"
+                >
+                  <LogOut className="size-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile template chips */}
+            <div className="flex gap-2 overflow-x-auto px-4 pb-3 lg:hidden">
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => handleSelectTemplate(t.id)}
+                  className={cn(
+                    "shrink-0 rounded-full border px-3 py-1 font-mono text-[11px] transition-colors",
+                    view === "gerador" && selectedId === t.id
+                      ? "border-term-green/40 bg-term-soft text-term-green-deep"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {t.id}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setView("biblioteca")}
+                className={cn(
+                  "shrink-0 rounded-full border px-3 py-1 font-mono text-[11px] transition-colors",
+                  view === "biblioteca"
+                    ? "border-term-green/40 bg-term-soft text-term-green-deep"
+                    : "text-muted-foreground",
+                )}
+              >
+                biblioteca
+              </button>
+            </div>
+          </header>
+
+          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-8">
+            {view === "gerador" ? (
+              <div className="space-y-8">
+                {/* Plan summary */}
+                <section>
+                  <h1 className="font-mono text-xl font-bold tracking-tight">
+                    Painel de controle
+                  </h1>
+                  <p className="mt-1 font-mono text-xs text-muted-foreground">
+                    resumo do plano e das suas gerações
+                  </p>
+                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <StatCard
+                      label="créditos restantes"
+                      value={`${credits ?? "…"}/${creditsTotal ?? "…"}`}
+                      hint={`${pct}% do plano starter`}
+                      bar={pct}
+                    />
+                    <StatCard
+                      label="textos salvos"
+                      value={usage?.savedCount ?? copies.length}
+                      hint="no seu histórico"
+                    />
+                    <StatCard
+                      label="gerações feitas"
+                      value={usage?.generatedTotal ?? 0}
+                      hint="copies geradas com o copyforge"
+                    />
+                  </div>
+                </section>
+
+                <GeneratorPanel
+                  key={template.id}
+                  template={template}
+                  usage={usage}
+                  onOpenLibrary={() => setView("biblioteca")}
+                  recentCopies={copies}
+                />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="font-mono text-xl font-bold tracking-tight">
+                    Meus Textos Salvos
+                  </h1>
+                  <p className="mt-1 font-mono text-xs text-muted-foreground">
+                    visualize, filtre e exclua as copies do seu histórico
+                  </p>
+                </div>
+                <LibraryPanel
+                  copies={copies}
+                  onGoToGenerator={() => setView("gerador")}
+                />
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
