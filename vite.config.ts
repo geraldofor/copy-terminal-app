@@ -84,6 +84,11 @@ export default defineConfig({
       'react-dom/client',
       'react-router',
       '@convex-dev/auth/react',
+      // Force pre-bundling of this subpath: the app imports ConvexError from
+      // 'convex/values', and without this entry the optimizer cache can end
+      // up missing convex_values.js, crashing the preview with
+      // "error loading dynamically imported module".
+      'convex/values',
       'framer-motion',
     ],
   },
