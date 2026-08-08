@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { TEMPLATES } from "@/lib/copy-templates";
+import { LanguageSelect } from "@/components/LanguageSelect";
+import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { Bookmark, LogOut, Plus, TerminalSquare } from "lucide-react";
 
@@ -32,6 +33,7 @@ export function CopySidebar({
   onRecharge,
   className,
 }: CopySidebarProps) {
+  const { t, templates } = useI18n();
   const pct =
     credits !== null && creditsTotal
       ? Math.min(100, Math.round((credits / creditsTotal) * 100))
@@ -62,10 +64,10 @@ export function CopySidebar({
       {/* Templates */}
       <div className="px-3 pt-5">
         <p className="mb-2 px-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          <span className="text-term-green">//</span> templates · [{TEMPLATES.length}]
+          <span className="text-term-green">//</span> {t("side.templates")} · [{templates.length}]
         </p>
         <nav className="space-y-1">
-          {TEMPLATES.map((template) => {
+          {templates.map((template) => {
             const active = view === "gerador" && selectedId === template.id;
             const Icon = template.icon;
             return (
@@ -103,7 +105,7 @@ export function CopySidebar({
       {/* Library */}
       <div className="px-3 pt-6">
         <p className="mb-2 px-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          <span className="text-term-green">//</span> biblioteca
+          <span className="text-term-green">//</span> {t("side.library")}
         </p>
         <button
           type="button"
@@ -121,7 +123,7 @@ export function CopySidebar({
               view === "biblioteca" ? "text-term-green-deep" : "text-muted-foreground",
             )}
           />
-          <span className="flex-1 text-[13px] font-medium">Meus Textos Salvos</span>
+          <span className="flex-1 text-[13px] font-medium">{t("side.saved")}</span>
           <span className="rounded-full bg-term-soft px-2 py-0.5 font-mono text-[10px] font-semibold text-term-green-deep">
             {savedCount}
           </span>
@@ -134,9 +136,9 @@ export function CopySidebar({
       <div className="px-4 pb-4">
         <div className="rounded-md border bg-card p-3">
           <div className="flex items-center justify-between font-mono text-[11px]">
-            <span className="text-muted-foreground">plano: starter</span>
+            <span className="text-muted-foreground">{t("side.plan")}</span>
             <span className={cn(credits !== null && credits <= 5 ? "text-term-amber" : "text-term-green")}>
-              ● {credits ?? "…"}/{creditsTotal ?? "…"} créditos
+              {t("side.credits", { credits: credits ?? "…", total: creditsTotal ?? "…" })}
             </span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-border">
@@ -147,8 +149,8 @@ export function CopySidebar({
           </div>
           <p className="mt-2 font-mono text-[10px] text-muted-foreground">
             {credits !== null && credits <= 5
-              ? "⚠ créditos baixos — recarregue abaixo"
-              : "// 1 crédito = 1 copy gerada"}
+              ? t("side.creditsLow")
+              : t("side.creditsInfo")}
           </p>
           <Button
             size="sm"
@@ -157,20 +159,21 @@ export function CopySidebar({
             onClick={onRecharge}
           >
             <Plus className="size-3.5" />
-            +10 créditos (demo)
+            {t("side.recharge")}
           </Button>
         </div>
       </div>
 
       {/* User */}
-      <div className="flex items-center gap-2 border-t px-4 py-3">
+      <div className="flex items-center gap-2 border-t px-3 py-3">
         <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-term-soft font-mono text-[11px] font-bold text-term-green-deep">
           {(userEmail ?? "?")[0].toUpperCase()}
         </div>
         <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">
           {userEmail}
         </span>
-        <Button size="icon-sm" variant="ghost" onClick={onSignOut} title="Sair">
+        <LanguageSelect compact />
+        <Button size="icon-sm" variant="ghost" onClick={onSignOut} title={t("common.signout")}>
           <LogOut className="size-4" />
         </Button>
       </div>

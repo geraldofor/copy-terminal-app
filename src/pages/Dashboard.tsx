@@ -1,10 +1,11 @@
 import { CopySidebar, type AppView } from "@/components/copy/CopySidebar";
 import { GeneratorPanel } from "@/components/copy/GeneratorPanel";
 import { LibraryPanel } from "@/components/copy/LibraryPanel";
+import { LanguageSelect } from "@/components/LanguageSelect";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
-import { getTemplate, TEMPLATES } from "@/lib/copy-templates";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { LogOut, TerminalSquare } from "lucide-react";
@@ -46,12 +47,13 @@ export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const addCredits = useMutation(api.usage.addCredits);
+  const { t, templates, getTemplate } = useI18n();
 
   const usage = useQuery(api.usage.getUsage);
   const copies = useQuery(api.copies.listCopies) ?? [];
 
   const [view, setView] = useState<AppView>("gerador");
-  const [selectedId, setSelectedId] = useState(TEMPLATES[0].id);
+  const [selectedId, setSelectedId] = useState(templates[0].id);
   const template = getTemplate(selectedId);
 
   const credits = usage?.credits ?? null;
@@ -62,10 +64,10 @@ export default function Dashboard() {
   const handleRecharge = async () => {
     try {
       await addCredits({ amount: 10 });
-      toast.success("+10 créditos adicionados (demo)");
+      toast.success(t("dash.rechargeOk"));
     } catch (error) {
       toast.error(
-        error instanceof ConvexError ? error.message : "Não foi possível recarregar.",
+        error instanceof ConvexError ? error.message : t("dash.rechargeErr"),
       );
     }
   };
@@ -114,11 +116,11 @@ export default function Dashboard() {
                   <span className="text-term-dim">/</span>
                   {view === "gerador" ? (
                     <>
-                      <span className="text-term-dim">gerador/</span>
+                      <span className="text-term-dim">{t("dash.gen")}/</span>
                       <span className="text-foreground">{template.id}</span>
                     </>
                   ) : (
-                    <span className="text-foreground">biblioteca</span>
+                    <span className="text-foreground">{t("dash.lib")}</span>
                   )}
                 </p>
               </div>
@@ -132,13 +134,14 @@ export default function Dashboard() {
                   )}
                 >
                   <span className="size-1.5 rounded-full bg-current" />
-                  {credits ?? "…"} créditos
+                  {t("dash.credits", { n: credits ?? "…" })}
                 </span>
+                <LanguageSelect compact />
                 <button
                   type="button"
                   onClick={handleSignOut}
                   className="flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:hidden"
-                  title="Sair"
+                  title={t("common.signout")}
                 >
                   <LogOut className="size-4" />
                 </button>
@@ -147,19 +150,19 @@ export default function Dashboard() {
 
             {/* Mobile template chips */}
             <div className="flex gap-2 overflow-x-auto px-4 pb-3 lg:hidden">
-              {TEMPLATES.map((t) => (
+              {templates.map((tpl) => (
                 <button
-                  key={t.id}
+                  key={tpl.id}
                   type="button"
-                  onClick={() => handleSelectTemplate(t.id)}
+                  onClick={() => handleSelectTemplate(tpl.id)}
                   className={cn(
                     "shrink-0 rounded-full border px-3 py-1 font-mono text-[11px] transition-colors",
-                    view === "gerador" && selectedId === t.id
+                    view === "gerador" && selectedId === tpl.id
                       ? "border-term-green/40 bg-term-soft text-term-green-deep"
                       : "text-muted-foreground",
                   )}
                 >
-                  {t.id}
+                  {tpl.id}
                 </button>
               ))}
               <button
@@ -172,7 +175,7 @@ export default function Dashboard() {
                     : "text-muted-foreground",
                 )}
               >
-                biblioteca
+                {t("dash.lib")}
               </button>
             </div>
           </header>
@@ -183,27 +186,27 @@ export default function Dashboard() {
                 {/* Plan summary */}
                 <section>
                   <h1 className="font-mono text-xl font-bold tracking-tight">
-                    Painel de controle
+                    {t("dash.title")}
                   </h1>
                   <p className="mt-1 font-mono text-xs text-muted-foreground">
-                    resumo do plano e das suas gerações
+                    {t("dash.subtitle")}
                   </p>
                   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <StatCard
-                      label="créditos restantes"
+                      label={t("dash.statCredits")}
                       value={`${credits ?? "…"}/${creditsTotal ?? "…"}`}
-                      hint={`${pct}% do plano starter`}
+                      hint={t("dash.statCreditsHint", { pct })}
                       bar={pct}
                     />
                     <StatCard
-                      label="textos salvos"
+                      label={t("dash.statSaved")}
                       value={usage?.savedCount ?? copies.length}
-                      hint="no seu histórico"
+                      hint={t("dash.statSavedHint")}
                     />
                     <StatCard
-                      label="gerações feitas"
+                      label={t("dash.statGenerated")}
                       value={usage?.generatedTotal ?? 0}
-                      hint="copies geradas com o copyforge"
+                      hint={t("dash.statGeneratedHint")}
                     />
                   </div>
                 </section>
@@ -220,10 +223,10 @@ export default function Dashboard() {
               <div className="space-y-6">
                 <div>
                   <h1 className="font-mono text-xl font-bold tracking-tight">
-                    Meus Textos Salvos
+                    {t("dash.libTitle")}
                   </h1>
                   <p className="mt-1 font-mono text-xs text-muted-foreground">
-                    visualize, filtre e exclua as copies do seu histórico
+                    {t("dash.libSubtitle")}
                   </p>
                 </div>
                 <LibraryPanel

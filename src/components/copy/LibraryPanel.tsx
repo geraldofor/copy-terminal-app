@@ -9,9 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TEMPLATES } from "@/lib/copy-templates";
 import type { CopyDoc } from "@/lib/types";
 import { cn, copyToClipboard } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
 import { ChevronDown, Copy, Search, Trash2 } from "lucide-react";
@@ -23,18 +23,9 @@ interface LibraryPanelProps {
   onGoToGenerator: () => void;
 }
 
-function formatDate(ts: number): string {
-  return new Date(ts).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export function LibraryPanel({ copies, onGoToGenerator }: LibraryPanelProps) {
   const deleteCopy = useMutation(api.copies.deleteCopy);
+  const { t, templates, dateLocale } = useI18n();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -51,18 +42,18 @@ export function LibraryPanel({ copies, onGoToGenerator }: LibraryPanelProps) {
 
   const handleCopy = async (content: string) => {
     const ok = await copyToClipboard(content);
-    if (ok) toast.success("Texto copiado para a área de transferência");
-    else toast.error("Não foi possível copiar o texto.");
+    if (ok) toast.success(t("common.copied"));
+    else toast.error(t("common.copyError"));
   };
 
   const confirmDelete = async () => {
     if (!toDelete) return;
     try {
       await deleteCopy({ id: toDelete._id });
-      toast.success("Copy excluída");
+      toast.success(t("lib.deleted"));
     } catch (error) {
       toast.error(
-        error instanceof ConvexError ? error.message : "Não foi possível excluir.",
+        error instanceof ConvexError ? error.message : t("lib.deleteErr"),
       );
     } finally {
       setToDelete(null);
@@ -78,7 +69,7 @@ export function LibraryPanel({ copies, onGoToGenerator }: LibraryPanelProps) {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="buscar por título ou conteúdo…"
+            placeholder={t("lib.search")}
             className="pl-9 font-mono text-sm"
           />
         </div>
@@ -87,8 +78,8 @@ export function LibraryPanel({ copies, onGoToGenerator }: LibraryPanelProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os templates</SelectItem>
-            {TEMPLATES.map((template) => (
+            <SelectItem value="all">{t("lib.all")}</SelectItem>
+            {templates.map((template) => (
               <SelectItem key={template.id} value={template.id}>
                 {template.name}
               </SelectItem>
@@ -98,28 +89,20 @@ export function LibraryPanel({ copies, onGoToGenerator }: LibraryPanelProps) {
       </div>
 
       <p className="font-mono text-[11px] text-muted-foreground">
-        <span className="text-term-green">//</span> {visible.length} de {copies.length}{" "}
-        texto(s) salvo(s)
+        <span className="text-term-green">//</span>{" "}
+        {t("lib.count", { visible: visible.length, total: copies.length })}
       </p>
 
       {/* List */}
       {visible.length === 0 ? (
         <div className="rounded-md border border-dashed bg-card/60 px-4 py-12 text-center">
           <p className="font-mono text-sm text-muted-foreground">
-            {copies.length === 0 ? (
-              <>
-                <span className="text-term-dim">//</span> nenhuma copy salva ainda
-              </>
-            ) : (
-              <>
-                <span className="text-term-dim">//</span> nada encontrado com esses
-                filtros
-              </>
-            )}
+            <span className="text-term-dim">//</span>{" "}
+            {copies.length === 0 ? t("lib.emptyNone") : t("lib.emptyFilter")}
           </p>
           {copies.length === 0 && (
             <Button className="mt-4 font-mono" onClick={onGoToGenerator}>
-              gerar primeira copy →
+              {t("lib.first")}
             </Button>
           )}
         </div>
@@ -150,7 +133,13 @@ export function LibraryPanel({ copies, onGoToGenerator }: LibraryPanelProps) {
                       {copy.title}
                     </span>
                     <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
-                      {formatDate(copy._creationTime)}
+                      {new Date(copy._creationTime).toLocaleDateString(dateLocale, {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
                     <ChevronDown
                       className={cn(
@@ -164,7 +153,7 @@ export function LibraryPanel({ copies, onGoToGenerator }: LibraryPanelProps) {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() => handleCopy(copy.content)}
-                      title="Copiar texto"
+                      title={t("common.copy")}
                     >
                       <Copy className="size-4" />
                     </Button>
@@ -173,7 +162,7 @@ export function LibraryPanel({ copies, onGoToGenerator }: LibraryPanelProps) {
                       variant="ghost"
                       className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => setToDelete(copy)}
-                      title="Excluir"
+                      title={t("common.delete")}
                     >
                       <Trash2 className="size-4" />
                     </Button>
@@ -194,19 +183,18 @@ export function LibraryPanel({ copies, onGoToGenerator }: LibraryPanelProps) {
       <AlertDialog open={toDelete !== null} onOpenChange={(open) => !open && setToDelete(null)}>
         <AlertDialogContent className="font-mono">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-mono">Excluir copy?</AlertDialogTitle>
+            <AlertDialogTitle className="font-mono">{t("lib.confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription className="font-mono">
-              &quot;{toDelete?.title}&quot; será removida permanentemente do seu
-              histórico. Essa ação não pode ser desfeita.
+              {t("lib.confirmDesc", { title: toDelete?.title ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="font-mono">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="font-mono">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive font-mono text-white hover:bg-destructive/90"
             >
-              Excluir
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

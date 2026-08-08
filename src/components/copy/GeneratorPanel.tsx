@@ -9,14 +9,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  makeCopyTitle,
-  TONE_LABELS,
-  toneOf,
-  type CopyTemplate,
-} from "@/lib/copy-templates";
+import { makeCopyTitle, toneLabel, toneOf, type CopyTemplate } from "@/lib/copy-templates";
 import type { CopyDoc, Usage } from "@/lib/types";
 import { copyToClipboard } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useEffect, useRef, useState } from "react";
@@ -50,6 +46,7 @@ export function GeneratorPanel({
 }: GeneratorPanelProps) {
   const consumeCredits = useMutation(api.usage.consumeCredits);
   const saveCopy = useMutation(api.copies.saveCopy);
+  const { t, locale, dateLocale } = useI18n();
 
   const [values, setValues] = useState<Record<string, string>>(() =>
     defaultsFor(template),
@@ -68,7 +65,6 @@ export function GeneratorPanel({
   const credits = usage?.credits ?? 0;
   const outOfCredits = usage !== undefined && usage !== null && usage.credits <= 0;
 
-  /* Reset the workspace whenever the template changes (and clean up timers). */
   /* Clear pending generation timers when the panel unmounts. The panel is
      remounted per template via `key` in the parent, which also resets state. */
   useEffect(() => {
@@ -102,12 +98,12 @@ export function GeneratorPanel({
 
     for (const field of template.fields) {
       if (field.required && !vals[field.key]?.trim()) {
-        toast.error(`Preencha o campo "${field.label}".`);
+        toast.error(t("gen.req", { field: field.label }));
         return;
       }
     }
     if (outOfCredits) {
-      toast.error("Créditos esgotados — recarregue para continuar gerando.");
+      toast.error(t("gen.errCredits"));
       return;
     }
 
@@ -127,19 +123,17 @@ export function GeneratorPanel({
     } catch (error) {
       setPhase("idle");
       toast.error(
-        error instanceof ConvexError
-          ? error.message
-          : "Não foi possível iniciar a geração.",
+        error instanceof ConvexError ? error.message : t("gen.errStart"),
       );
       return;
     }
 
     const steps = [
-      "modelo de linguagem … ok",
-      `briefing: ${template.name} … ok`,
-      `público-alvo: ${vals.audience || vals.topic || "—"} … ok`,
-      `tom de voz: ${TONE_LABELS[toneOf(vals)]} … ok`,
-      "estruturando saída …",
+      t("gen.logModel"),
+      t("gen.logBrief", { name: template.name }),
+      t("gen.logAudience", { value: vals.audience || vals.topic || "—" }),
+      t("gen.logTone", { tone: toneLabel(locale, toneOf(vals)) }),
+      t("gen.logStructure"),
     ];
     steps.forEach((step, index) => {
       timeouts.current.push(
@@ -151,7 +145,7 @@ export function GeneratorPanel({
     });
     timeouts.current.push(
       window.setTimeout(() => {
-        setResult(template.generate(vals));
+        setResult(template.generate(vals, locale));
         setPhase("typing");
       }, 420 * (steps.length + 1) + 150),
     );
@@ -161,8 +155,8 @@ export function GeneratorPanel({
     const content = (editing ? editText : result).trim();
     if (!content) return;
     const ok = await copyToClipboard(content);
-    if (ok) toast.success("Texto copiado para a área de transferência");
-    else toast.error("Não foi possível copiar o texto.");
+    if (ok) toast.success(t("common.copied"));
+    else toast.error(t("common.copyError"));
   };
 
   const handleSave = async () => {
@@ -177,10 +171,10 @@ export function GeneratorPanel({
         input: lastValues,
       });
       setSaved(true);
-      toast.success("Copy salva no histórico");
+      toast.success(t("gen.savedOk"));
     } catch (error) {
       toast.error(
-        error instanceof ConvexError ? error.message : "Não foi possível salvar.",
+        error instanceof ConvexError ? error.message : t("gen.errSave"),
       );
     } finally {
       setBusy(false);
@@ -195,25 +189,28 @@ export function GeneratorPanel({
   const applyEdit = () => {
     const next = editText.trim();
     if (!next) {
-      toast.error("A copy não pode ficar vazia.");
+      toast.error(t("gen.editEmpty"));
       return;
     }
     setResult(next);
     setTyped(next);
     setEditing(false);
     setSaved(false);
-    toast.success("Alterações aplicadas");
+    toast.success(t("gen.editApplied"));
   };
 
   const processing = phase === "processing" || phase === "typing";
-  const generateLabel =
-    processing ? "Processando…" : phase === "done" ? "Gerar outra copy" : "Gerar copy";
+  const generateLabel = processing
+    ? t("gen.processing")
+    : phase === "done"
+      ? t("gen.another")
+      : t("gen.generate");
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Brief form */}
       <TerminalWindow
-        title={`copyforge — brief · ${template.path}`}
+        title={t("gen.termBrief", { path: template.path })}
         bodyClassName="p-4 sm:p-5"
       >
         <div className="mb-4">
@@ -231,7 +228,7 @@ export function GeneratorPanel({
                 <span className="text-term-dim">{field.key}</span>
                 <span className="text-term-green">=</span>
                 {field.required && (
-                  <span className="text-term-amber" title="obrigatório">*</span>
+                  <span className="text-term-amber" title={t("gen.required")}>*</span>
                 )}
               </span>
               {field.type === "textarea" ? (
@@ -248,7 +245,7 @@ export function GeneratorPanel({
                   onValueChange={(value) => setValue(field.key, value)}
                 >
                   <SelectTrigger className="w-full font-mono text-sm">
-                    <SelectValue placeholder="Selecione…" />
+                    <SelectValue placeholder={t("gen.select")} />
                   </SelectTrigger>
                   <SelectContent>
                     {field.options?.map((option) => (
@@ -287,12 +284,12 @@ export function GeneratorPanel({
           {outOfCredits && (
             <p className="flex items-center gap-2 rounded-md border border-term-amber/40 bg-term-amber/10 px-3 py-2 font-mono text-xs text-term-amber">
               <AlertTriangle className="size-4 shrink-0" />
-              créditos esgotados — recarregue no menu lateral para continuar.
+              {t("gen.warnLow")}
             </p>
           )}
           <p className="text-center font-mono text-[11px] text-muted-foreground">
-            <span className="text-term-green">//</span> 1 crédito por geração ·{" "}
-            {usage ? `${credits} disponíveis` : "calculando…"}
+            <span className="text-term-green">//</span>{" "}
+            {usage ? t("gen.creditNote", { n: credits }) : t("gen.calc")}
           </p>
         </div>
       </TerminalWindow>
@@ -300,18 +297,18 @@ export function GeneratorPanel({
       {/* Output */}
       {phase === "idle" && (
         <TerminalWindow
-          title="copyforge — output"
+          title={t("gen.termOutput")}
           bodyClassName="flex min-h-[280px] flex-col justify-center p-6 font-mono text-[13px] leading-6"
         >
           <p className="text-muted-foreground">
-            <span className="text-term-dim">//</span> sua copy aparecerá aqui
+            <span className="text-term-dim">//</span> {t("gen.emptyMain")}
           </p>
           <p className="mt-2 text-muted-foreground">
-            preencha o briefing e rode{" "}
+            {t("gen.emptySubPre")}{" "}
             <span className="rounded bg-term-soft px-1.5 py-0.5 text-term-green-deep">
-              gerar copy
+              {t("gen.generate")}
             </span>{" "}
-            para começar.
+            {t("gen.emptySubPost")}
           </p>
           <div className="mt-6">
             <BlinkCursor />
@@ -326,7 +323,7 @@ export function GeneratorPanel({
         >
           <p className="text-term-green">
             $ copyforge run {template.id}{" "}
-            {lastValues.tone ? `--tone ${TONE_LABELS[toneOf(lastValues)]}` : ""}
+            {lastValues.tone ? `--tone ${toneLabel(locale, toneOf(lastValues))}` : ""}
           </p>
           {logLines.map((line, index) => (
             <p key={index} className="text-muted-foreground">
@@ -361,16 +358,15 @@ export function GeneratorPanel({
       <div className="lg:col-span-2">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            <span className="text-term-green">//</span> histórico recente
+            <span className="text-term-green">//</span> {t("gen.recent")}
           </h3>
           <Button variant="ghost" size="sm" className="font-mono text-xs" onClick={onOpenLibrary}>
-            ver todos →
+            {t("gen.seeAll")}
           </Button>
         </div>
         {recentCopies.length === 0 ? (
           <p className="rounded-md border border-dashed bg-card/60 px-4 py-5 font-mono text-xs text-muted-foreground">
-            nenhuma copy salva ainda — gere um texto e clique em{" "}
-            <span className="text-term-green">salvar no histórico</span>.
+            {t("gen.recentEmpty", { action: t("out.save") })}
           </p>
         ) : (
           <ul className="divide-y rounded-md border bg-card">
@@ -386,7 +382,7 @@ export function GeneratorPanel({
                   <span className="text-foreground/80">{copy.title}</span>
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">
-                  {new Date(copy._creationTime).toLocaleDateString("pt-BR", {
+                  {new Date(copy._creationTime).toLocaleDateString(dateLocale, {
                     day: "2-digit",
                     month: "short",
                   })}

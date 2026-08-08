@@ -1,4 +1,6 @@
 import { Captions, Mail, Megaphone, Video, type LucideIcon } from "lucide-react";
+import { TEMPLATE_DATA } from "@/i18n/templates";
+import type { Locale } from "@/i18n/strings";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -21,6 +23,14 @@ export interface FieldDef {
   defaultValue?: string;
 }
 
+export interface ToneBank {
+  benefits: string[];
+  pains: string[];
+  ctas: string[];
+  reasons: string[];
+  urgency: string;
+}
+
 export interface CopyTemplate {
   id: string;
   name: string;
@@ -29,87 +39,8 @@ export interface CopyTemplate {
   tags: string[];
   icon: LucideIcon;
   fields: FieldDef[];
-  generate: (values: Record<string, string>) => string;
+  generate: (values: Record<string, string>, locale: Locale) => string;
 }
-
-export const TONE_OPTIONS: FieldOption[] = [
-  { value: "profissional", label: "Profissional" },
-  { value: "divertido", label: "Divertido" },
-  { value: "persuasivo", label: "Persuasivo" },
-  { value: "urgente", label: "Urgente" },
-];
-
-export const TONE_LABELS: Record<Tone, string> = {
-  profissional: "profissional",
-  divertido: "divertido",
-  persuasivo: "persuasivo",
-  urgente: "urgente",
-};
-
-/* ------------------------------------------------------------------ */
-/* Tone banks                                                          */
-/* ------------------------------------------------------------------ */
-
-interface ToneBank {
-  benefits: string[];
-  pains: string[];
-  ctas: string[];
-  reasons: string[];
-  urgency: string;
-}
-
-const TONE: Record<Tone, ToneBank> = {
-  profissional: {
-    benefits: [
-      "entrega resultados consistentes",
-      "simplifica o processo do início ao fim",
-      "transforma esforço em resultado mensurável",
-    ],
-    pains: ["perda de tempo", "resultados inconsistentes", "retrabalho constante"],
-    ctas: ["Comece hoje", "Solicite uma demonstração", "Fale com nosso time"],
-    reasons: [
-      "É o padrão de quem já mede resultado.",
-      "Processo claro, sem surpresas.",
-    ],
-    urgency: "",
-  },
-  divertido: {
-    benefits: [
-      "deixa tudo mais fácil (e mais leve)",
-      "resolve na brincadeira o que ninguém resolveu",
-      "é simples assim, juro",
-    ],
-    pains: ["perder tempo à toa", "aquela dor de cabeça desnecessária", "tanto mimimi"],
-    ctas: ["Bora testar?", "Clica aí, vai", "Vem com a gente"],
-    reasons: ["Sem enrolação: funciona mesmo.", "O bom é que é bom mesmo."],
-    urgency: "",
-  },
-  persuasivo: {
-    benefits: [
-      "é a escolha certa para quem não aceita menos",
-      "entrega exatamente o que você precisa",
-      "é o diferencial que faltava",
-    ],
-    pains: ["oportunidades desperdiçadas", "continuar no mesmo lugar", "deixar dinheiro na mesa"],
-    ctas: ["Garanta o seu agora", "Aproveite esta oportunidade", "Decida certo hoje"],
-    reasons: [
-      "Não é promessa: é o que acontece com quem testa.",
-      "Cada dia esperando é resultado adiado.",
-    ],
-    urgency: "",
-  },
-  urgente: {
-    benefits: [
-      "resolve agora, com resultado rápido",
-      "atende na hora, sem enrolação",
-      "entrega imediata, com oferta limitada",
-    ],
-    pains: ["esperar mais um dia", "deixar a oferta passar", "ficar para trás"],
-    ctas: ["Últimas unidades — garanta hoje", "Não deixe para depois", "Comece agora mesmo"],
-    reasons: ["Enquanto você lê, a oferta avança.", "O tempo é o único recurso que não volta."],
-    urgency: "Oferta válida apenas por tempo limitado.",
-  },
-};
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -120,9 +51,25 @@ function sample<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/** Fill `{placeholders}` in a template string. */
+function fmt(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key) => vars[key] ?? match);
+}
+
 export function toneOf(values: Record<string, string>): Tone {
   const tone = values.tone as Tone | undefined;
-  return tone && tone in TONE ? tone : "persuasivo";
+  const banks = TEMPLATE_DATA.pt.banks;
+  return tone && tone in banks ? tone : "persuasivo";
+}
+
+/** Display label for a tone in a given locale. */
+export function toneLabel(locale: Locale, tone: Tone): string {
+  return TEMPLATE_DATA[locale].toneLabels[tone];
+}
+
+/** Display options for the tone select in a given locale. */
+export function toneOptions(locale: Locale): FieldOption[] {
+  return TEMPLATE_DATA[locale].toneOptions;
 }
 
 function slugifyWords(text: string, max = 4): string[] {
@@ -140,60 +87,44 @@ function slugifyWords(text: string, max = 4): string[] {
 /* Template 1 — Meta/Google Ads                                        */
 /* ------------------------------------------------------------------ */
 
-const GOAL_PHRASES: Record<string, string> = {
-  vendas: "converter interesse em vendas",
-  leads: "gerar leads qualificados",
-  cliques: "atrair cliques de qualidade",
-  alcance: "ampliar o alcance da marca",
-  mensagens: "iniciar conversas que vendem",
-};
-
-const PLATFORM_LABELS: Record<string, string> = {
-  meta: "Meta Ads (Facebook/Instagram)",
-  google: "Google Ads",
-  ambos: "Meta Ads + Google Ads",
-};
-
-function generateMetaAds(v: Record<string, string>): string {
+function generateMetaAds(v: Record<string, string>, locale: Locale): string {
+  const c = TEMPLATE_DATA[locale].content.metaAds;
+  const banks = TEMPLATE_DATA[locale].banks;
   const audience = v.audience?.trim() || "seu público";
   const product = v.product?.trim() || "seu produto";
   const tone = toneOf(v);
-  const t = TONE[tone];
-  const goalPhrase = GOAL_PHRASES[v.goal] ?? GOAL_PHRASES.vendas;
+  const t = banks[tone];
+  const goalPhrase = c.goalPhrases[v.goal] ?? c.goalPhrases.vendas;
   const platform = v.platform || "meta";
   const diff = v.differentiator?.trim();
   const cta = v.cta?.trim() || sample(t.ctas);
 
-  const body = `Para ${audience}, ${product} é a forma mais direta de ${goalPhrase}. ${
-    diff ? `E tem mais: ${diff}. ` : ""
-  }${sample(t.reasons)} ${
-    t.urgency ? `${t.urgency} ` : ""
-  }Teste agora e veja o resultado na prática.`;
+  const body =
+    fmt(c.body, { audience, product, goal: goalPhrase }) +
+    (diff ? ` ${fmt(c.more, { diff })}` : "") +
+    ` ${sample(t.reasons)}${t.urgency ? ` ${t.urgency}` : ""} ${c.outro}`;
 
-  const tip =
-    platform === "google"
-      ? "Combine este texto com palavras-chave de alta intenção e um link direto para a página de conversão."
-      : "Destaque o produto nos 3 primeiros segundos do criativo e use formato 4:5 para mobile.";
+  const tip = platform === "google" ? c.tips.google : c.tips.meta;
 
   return [
-    "## ESTRATÉGIA",
-    `- Objetivo: ${goalPhrase}`,
-    `- Público: ${audience}`,
-    `- Tom: ${TONE_LABELS[tone]}`,
-    `- Formato: ${PLATFORM_LABELS[platform]}`,
+    `## ${c.headings.strategy}`,
+    `- ${c.labels.goal}: ${goalPhrase}`,
+    `- ${c.labels.audience}: ${audience}`,
+    `- ${c.labels.tone}: ${toneLabel(locale, tone)}`,
+    `- ${c.labels.format}: ${c.platformLabels[platform]}`,
     "",
-    "## 3 TÍTULOS PARA TESTAR (A/B/C)",
+    `## ${c.headings.titles}`,
     `- ${product}: ${sample(t.benefits)}`,
-    `- Para ${audience} que querem ${goalPhrase}`,
-    `- Chega de ${sample(t.pains)} — ${product} resolve`,
+    `- ${fmt(c.headlineAudience, { audience, goal: goalPhrase })}`,
+    `- ${fmt(c.headlinePain, { pain: sample(t.pains), product })}`,
     "",
-    "## TEXTO PRINCIPAL",
+    `## ${c.headings.main}`,
     body,
     "",
-    "## CHAMADA PARA AÇÃO",
+    `## ${c.headings.cta}`,
     `- ${cta} →`,
     "",
-    "## DICA RÁPIDA",
+    `## ${c.headings.tip}`,
     `- ${tip}`,
   ].join("\n");
 }
@@ -202,63 +133,41 @@ function generateMetaAds(v: Record<string, string>): string {
 /* Template 2 — Captions IG/TikTok                                     */
 /* ------------------------------------------------------------------ */
 
-const CAPTION_GOALS: Record<string, string> = {
-  engajamento: "engajar e gerar comentários",
-  vendas: "vender sem parecer vendedor",
-  seguidores: "atrair seguidores qualificados",
-};
-
-function generateLegendas(v: Record<string, string>): string {
+function generateLegendas(v: Record<string, string>, locale: Locale): string {
+  const c = TEMPLATE_DATA[locale].content.legendas;
+  const banks = TEMPLATE_DATA[locale].banks;
   const audience = v.audience?.trim() || "seu público";
   const product = v.product?.trim() || "seu produto";
   const topic = v.topic?.trim() || "este assunto";
   const tone = toneOf(v);
-  const t = TONE[tone];
-  const goalPhrase = CAPTION_GOALS[v.goal] ?? CAPTION_GOALS.engajamento;
+  const t = banks[tone];
+  const goalPhrase = c.goalPhrases[v.goal] ?? c.goalPhrases.engajamento;
   const emojis = v.emojis === "sim";
   const emo = (s: string) => (emojis ? s : "");
 
-  const hook = sample([
-    `Ninguém te contou, mas ${topic} mudou de nível.`,
-    `Se você é ${audience}, precisa ver isso.`,
-    `O detalhe sobre ${topic} que quase ninguém mostra.`,
-  ]);
+  const hook = fmt(sample(c.hooks), { topic, audience });
   const cta = v.cta?.trim() || sample(t.ctas);
 
   const words = slugifyWords(topic, 3);
-  const base = [
-    "dica",
-    "conteudo",
-    "marketingdigital",
-    "criatividade",
-    "viral",
-    "crescimento",
-    "estrategia",
-    "insights",
-    "conteudocriativo",
-    "foryou",
-    "reels",
-    "tiktok",
-  ];
-  const tags = [...words.map((w) => `#${w}`), ...base.map((b) => `#${b}`)].slice(0, 15);
+  const tags = [...words.map((w) => `#${w}`), ...c.hashtagBase.map((b) => `#${b}`)].slice(0, 15);
 
   return [
-    "## GANCHO",
+    `## ${c.headings.hook}`,
     hook,
     "",
-    "## CORPO",
-    `${product} chegou para ${goalPhrase}. ${sample(t.reasons)}`,
-    `Pensa: ${sample(t.benefits)} — sem complicação e sem enrolação. ${emo("✨")}`,
+    `## ${c.headings.body}`,
+    `${fmt(c.body, { product, goal: goalPhrase })} ${sample(t.reasons)}`,
+    `${fmt(c.body2, { benefit: sample(t.benefits) })} ${emo("✨")}`,
     "",
-    "## CHAMADA PARA AÇÃO",
+    `## ${c.headings.cta}`,
     `- ${cta} ${emo("🚀")}`,
     "",
-    "## HASHTAGS",
+    `## ${c.headings.hashtags}`,
     `- ${tags.join(" ")}`,
     "",
-    "## DICAS DE PUBLICAÇÃO",
-    "- Publique no horário de pico do seu público e responda os comentários da primeira hora.",
-    "- Use trending sounds e salve o vídeo para testar no dia seguinte.",
+    `## ${c.headings.tips}`,
+    `- ${c.tips[0]}`,
+    `- ${c.tips[1]}`,
   ].join("\n");
 }
 
@@ -266,81 +175,69 @@ function generateLegendas(v: Record<string, string>): string {
 /* Template 3 — Reels/Shorts scripts                                   */
 /* ------------------------------------------------------------------ */
 
-const SCENE_LAYOUTS: Record<string, [string, string, string][]> = {
+const SCENE_LAYOUTS: Record<string, [string, string][]> = {
   "15": [
-    ["0:00–0:04", "GANCHO", "hook"],
-    ["0:04–0:12", "DESENVOLVIMENTO", "dev"],
-    ["0:12–0:15", "CTA", "cta"],
+    ["0:00–0:04", "hook"],
+    ["0:04–0:12", "dev"],
+    ["0:12–0:15", "cta"],
   ],
   "30": [
-    ["0:00–0:04", "GANCHO", "hook"],
-    ["0:04–0:14", "DOR → SOLUÇÃO", "dev"],
-    ["0:14–0:24", "CLÍMAX", "climax"],
-    ["0:24–0:30", "CTA", "cta"],
+    ["0:00–0:04", "hook"],
+    ["0:04–0:14", "pain"],
+    ["0:14–0:24", "climax"],
+    ["0:24–0:30", "cta"],
   ],
   "60": [
-    ["0:00–0:06", "GANCHO", "hook"],
-    ["0:06–0:20", "CONTEXTO", "context"],
-    ["0:20–0:40", "SOLUÇÃO", "solve"],
-    ["0:40–0:52", "OBJEÇÃO", "objection"],
-    ["0:52–1:00", "CTA", "cta"],
+    ["0:00–0:06", "hook"],
+    ["0:06–0:20", "context"],
+    ["0:20–0:40", "solve"],
+    ["0:40–0:52", "objection"],
+    ["0:52–1:00", "cta"],
   ],
 };
 
-function generateRoteiros(v: Record<string, string>): string {
+function generateRoteiros(v: Record<string, string>, locale: Locale): string {
+  const c = TEMPLATE_DATA[locale].content.roteiros;
+  const banks = TEMPLATE_DATA[locale].banks;
   const audience = v.audience?.trim() || "seu público";
   const product = v.product?.trim() || "seu produto";
   const topic = v.topic?.trim() || "este assunto";
   const duration = v.duration || "30";
   const platform = v.platform || "reels";
   const tone = toneOf(v);
-  const t = TONE[tone];
-  const goalPhrase = CAPTION_GOALS[v.goal] ?? CAPTION_GOALS.engajamento;
+  const t = banks[tone];
+  const goalPhrase = TEMPLATE_DATA[locale].content.legendas.goalPhrases[v.goal] ?? "engajar e gerar comentários";
   const diff = v.differentiator?.trim();
   const cta = v.cta?.trim() || sample(t.ctas);
 
-  const hook = sample([
-    `Pare de rolar: ${topic} resolve isso em segundos.`,
-    `Se você é ${audience}, esse vídeo é seu.`,
-    `${topic} — do jeito que ninguém te contou.`,
-  ]);
-  const dev = `${product} faz ${goalPhrase}. ${sample(t.benefits)}.`;
-  const climax = diff ? `O detalhe que muda tudo: ${diff}.` : "Resultado real, na prática.";
-  const context = `O problema de quem é ${audience}: ${sample(t.pains)}.`;
-  const objection = diff
-    ? `Sim, e ainda tem mais: ${diff}.`
-    : "Funciona para quem não tem tempo e quer resultado.";
+  const hook = fmt(sample(c.hooks), { topic, audience });
+  const dev = fmt(c.dev, { product, goal: goalPhrase, benefit: sample(t.benefits) });
+  const climax = diff ? fmt(c.climax, { diff }) : c.climaxFallback;
+  const context = fmt(c.context, { audience, pain: sample(t.pains) });
+  const objection = diff ? fmt(c.objection, { diff }) : c.objectionFallback;
 
-  const scenes = (SCENE_LAYOUTS[duration] ?? SCENE_LAYOUTS["30"]).map(
-    ([range, label, kind]) => {
-      const text = { hook, dev, climax, context, objection, cta: `${cta} →` }[kind];
-      return `[CENA · ${range}] ${label} — ${text}`;
-    },
+  const sceneTexts: Record<string, string> = { hook, dev, climax, context, objection, cta: `${cta} →` };
+  const scenesFinal = (SCENE_LAYOUTS[duration] ?? SCENE_LAYOUTS["30"]).map(
+    ([range, kind]) => `[${c.scenePrefix} · ${range}] ${c.sceneLabels[kind]} — ${sceneTexts[kind]}`,
   );
 
-  const caption = `${hook} ${cta} → ${sample([
-    "Salva pra ver depois!",
-    'Comenta "EU QUERO" pra receber o link.',
-    "Compartilha com quem precisa disso.",
-  ])}`;
+  const caption = `${hook} ${cta} → ${sample(c.captions)}`;
 
   const trilha =
-    tone === "urgente"
-      ? "Ritmo acelerado, cortes rápidos e som de trending com BPM alto."
-      : "Trilha leve e crescente; comece no silêncio na primeira cena.";
+    tone === "urgente" ? c.audioUrgent : c.audioNormal;
 
   return [
-    `## ROTEIRO · ${duration}s · ${platform === "reels" ? "Reels" : "Shorts"}`,
-    ...scenes,
+    `## ${c.headings.script} · ${duration}s · ${platform === "reels" ? "Reels" : "Shorts"}`,
+    ...scenesFinal,
     "",
-    "## LEGENDA SUGERIDA",
+    `## ${c.headings.caption}`,
     `- ${caption}`,
     "",
-    "## TRILHA / ÁUDIO",
+    `## ${c.headings.audio}`,
     `- ${trilha}`,
     "",
-    "## PARA O EDITOR",
-    "- Legendas automáticas ativadas, texto centralizado e marca visível nos últimos 3 segundos.",
+    `## ${c.headings.editor}`,
+    `- ${c.editorTip}`,
   ].join("\n");
 }
 
@@ -348,13 +245,9 @@ function generateRoteiros(v: Record<string, string>): string {
 /* Template 4 — Sales emails                                           */
 /* ------------------------------------------------------------------ */
 
-const EMAIL_OPENERS: Record<string, string> = {
-  venda: "Quero ser direto com você: ",
-  lancamento: "Estamos lançando oficialmente o ",
-  reengajamento: "Faz tempo que não nos falamos — e tenho uma novidade boa: ",
-};
-
-function generateEmails(v: Record<string, string>): string {
+function generateEmails(v: Record<string, string>, locale: Locale): string {
+  const c = TEMPLATE_DATA[locale].content.emails;
+  const banks = TEMPLATE_DATA[locale].banks;
   const recipient = v.recipient?.trim();
   const audience = v.audience?.trim() || "você";
   const company = v.company?.trim() || "sua empresa";
@@ -363,336 +256,87 @@ function generateEmails(v: Record<string, string>): string {
   const deadline = v.deadline?.trim();
   const goal = v.goal || "venda";
   const tone = toneOf(v);
-  const t = TONE[tone];
+  const t = banks[tone];
   const cta = v.cta?.trim() || sample(t.ctas);
 
   const subjects = [
-    `[${company}] ${product} — ${sample(t.benefits).toLowerCase()}`,
-    recipient ? `${recipient}, ficou algo para você.` : `Uma ideia para ${audience}.`,
+    fmt(c.subjectBenefit, { company, product, benefit: sample(t.benefits).toLowerCase() }),
+    recipient ? fmt(c.subjectForYou, { recipient }) : fmt(c.subjectIdea, { audience }),
     t.urgency
-      ? `Última chamada${deadline ? ` · ${deadline}` : ""}`
-      : "3 motivos para abrir este e-mail",
+      ? `${c.subjectLastCall}${deadline ? ` · ${deadline}` : ""}`
+      : c.subjectReasons,
   ];
 
   const preheader = `${offer ? `${offer}. ` : ""}${sample(t.benefits)}.`;
 
   const body = [
-    recipient ? `Oi, ${recipient}!` : "Olá!",
+    recipient ? fmt(c.hi, { recipient }) : c.hello,
     "",
-    `${EMAIL_OPENERS[goal]}${goal === "lancamento" ? `${product}, e quero que você seja dos primeiros.` : `${product} ${sample(t.benefits)}. ${sample(t.reasons)}`}`,
+    `${c.openers[goal]}${goal === "lancamento" ? fmt(c.launchBody, { product }) : fmt(c.body, { product, benefit: sample(t.benefits), reason: sample(t.reasons) })}`,
     "",
-    offer ? `E tem mais: ${offer}.` : "Nesta edição, incluímos um bônus exclusivo para quem chegar primeiro.",
+    offer ? fmt(c.offer, { offer }) : c.bonus,
     "",
-    `${t.urgency ? `${t.urgency} ` : ""}É só clicar no botão abaixo.`,
+    `${t.urgency ? `${t.urgency} ` : ""}${c.click}`,
     "",
     `- ${cta} →`,
     "",
-    t.urgency ? `P.S.: ${t.urgency}` : "P.S.: Quer testar antes? Responda este e-mail que eu te ajudo.",
+    t.urgency ? `P.S.: ${t.urgency}` : c.ps,
     "",
-    `Equipe ${company}`,
+    fmt(c.team, { company }),
   ].join("\n");
 
   return [
-    "## 3 ASSUNTOS PARA TESTAR",
+    `## ${c.headings.subjects}`,
     `- ${subjects[0]}`,
     `- ${subjects[1]}`,
     `- ${subjects[2]}`,
     "",
-    "## PRÉ-HEADER",
+    `## ${c.headings.preheader}`,
     preheader,
     "",
-    "## CORPO DO E-MAIL",
+    `## ${c.headings.body}`,
     body,
   ].join("\n");
 }
 
 /* ------------------------------------------------------------------ */
-/* Registry                                                            */
+/* Registry (localized per locale)                                     */
 /* ------------------------------------------------------------------ */
 
-export const TEMPLATES: CopyTemplate[] = [
-  {
-    id: "meta-ads",
-    name: "Anúncios Meta / Google",
-    description: "Headlines, textos e CTAs para campanhas que convertem.",
-    path: "~/templates/meta-ads.ts",
-    tags: ["Meta Ads", "Google Ads", "Conversão"],
-    icon: Megaphone,
-    fields: [
-      {
-        key: "platform",
-        label: "plataforma",
-        type: "select",
-        options: [
-          { value: "meta", label: "Meta Ads (Facebook/Instagram)" },
-          { value: "google", label: "Google Ads" },
-          { value: "ambos", label: "Ambos" },
-        ],
-        defaultValue: "meta",
-      },
-      {
-        key: "audience",
-        label: "público-alvo",
-        type: "textarea",
-        placeholder: "Ex.: donas de casa, 30–50 anos, que querem praticidade na cozinha",
-        required: true,
-      },
-      {
-        key: "product",
-        label: "produto / serviço",
-        type: "input",
-        placeholder: "Ex.: panela elétrica multifuncional",
-        required: true,
-      },
-      {
-        key: "differentiator",
-        label: "diferencial (opcional)",
-        type: "input",
-        placeholder: "Ex.: entrega em 24h e 3 anos de garantia",
-      },
-      { key: "tone", label: "tom de voz", type: "select", options: TONE_OPTIONS, defaultValue: "persuasivo" },
-      {
-        key: "goal",
-        label: "objetivo",
-        type: "select",
-        options: [
-          { value: "vendas", label: "Vendas" },
-          { value: "leads", label: "Leads" },
-          { value: "cliques", label: "Cliques" },
-          { value: "alcance", label: "Alcance" },
-          { value: "mensagens", label: "Mensagens" },
-        ],
-        defaultValue: "vendas",
-      },
-      {
-        key: "cta",
-        label: "chamada para ação (opcional)",
-        type: "input",
-        placeholder: "Ex.: Comprar agora",
-      },
-    ],
-    generate: generateMetaAds,
-  },
-  {
-    id: "legendas",
-    name: "Legendas IG / TikTok",
-    description: "Ganchos, corpo e hashtags para posts que engajam.",
-    path: "~/templates/legendas.ts",
-    tags: ["Instagram", "TikTok", "Engajamento"],
-    icon: Captions,
-    fields: [
-      {
-        key: "platform",
-        label: "plataforma",
-        type: "select",
-        options: [
-          { value: "instagram", label: "Instagram" },
-          { value: "tiktok", label: "TikTok" },
-          { value: "ambos", label: "Ambos" },
-        ],
-        defaultValue: "instagram",
-      },
-      {
-        key: "audience",
-        label: "público-alvo",
-        type: "textarea",
-        placeholder: "Ex.: microempreendedoras que usam Instagram para vender",
-        required: true,
-      },
-      {
-        key: "topic",
-        label: "tema do post",
-        type: "input",
-        placeholder: "Ex.: 3 erros de postagem que afastam clientes",
-        required: true,
-      },
-      {
-        key: "product",
-        label: "produto / serviço",
-        type: "input",
-        placeholder: "Ex.: mentoria de marketing digital",
-        required: true,
-      },
-      { key: "tone", label: "tom de voz", type: "select", options: TONE_OPTIONS, defaultValue: "divertido" },
-      {
-        key: "goal",
-        label: "objetivo",
-        type: "select",
-        options: [
-          { value: "engajamento", label: "Engajamento" },
-          { value: "vendas", label: "Vendas" },
-          { value: "seguidores", label: "Seguidores" },
-        ],
-        defaultValue: "engajamento",
-      },
-      {
-        key: "emojis",
-        label: "usar emojis",
-        type: "select",
-        options: [
-          { value: "sim", label: "Sim" },
-          { value: "nao", label: "Não" },
-        ],
-        defaultValue: "sim",
-      },
-      {
-        key: "cta",
-        label: "chamada para ação (opcional)",
-        type: "input",
-        placeholder: "Ex.: Salva esse post!",
-      },
-    ],
-    generate: generateLegendas,
-  },
-  {
-    id: "roteiros",
-    name: "Roteiros Reels / Shorts",
-    description: "Scripts cena a cena, com legenda e trilha sugeridas.",
-    path: "~/templates/roteiros.ts",
-    tags: ["Reels", "Shorts", "Vídeo"],
-    icon: Video,
-    fields: [
-      {
-        key: "platform",
-        label: "plataforma",
-        type: "select",
-        options: [
-          { value: "reels", label: "Instagram Reels" },
-          { value: "shorts", label: "YouTube Shorts" },
-        ],
-        defaultValue: "reels",
-      },
-      {
-        key: "duration",
-        label: "duração",
-        type: "select",
-        options: [
-          { value: "15", label: "15 segundos" },
-          { value: "30", label: "30 segundos" },
-          { value: "60", label: "60 segundos" },
-        ],
-        defaultValue: "30",
-      },
-      {
-        key: "audience",
-        label: "público-alvo",
-        type: "textarea",
-        placeholder: "Ex.: profissionais de RH que buscam conteúdo rápido",
-        required: true,
-      },
-      {
-        key: "topic",
-        label: "tema do vídeo",
-        type: "input",
-        placeholder: "Ex.: como montar um funil de vendas em 2026",
-        required: true,
-      },
-      {
-        key: "product",
-        label: "produto / serviço",
-        type: "input",
-        placeholder: "Ex.: curso de funis de vendas",
-        required: true,
-      },
-      {
-        key: "differentiator",
-        label: "diferencial (opcional)",
-        type: "input",
-        placeholder: "Ex.: bônus: 10 templates prontos",
-      },
-      { key: "tone", label: "tom de voz", type: "select", options: TONE_OPTIONS, defaultValue: "persuasivo" },
-      {
-        key: "goal",
-        label: "objetivo",
-        type: "select",
-        options: [
-          { value: "engajamento", label: "Engajamento" },
-          { value: "vendas", label: "Vendas" },
-          { value: "seguidores", label: "Seguidores" },
-        ],
-        defaultValue: "engajamento",
-      },
-      {
-        key: "cta",
-        label: "chamada para ação (opcional)",
-        type: "input",
-        placeholder: "Ex.: Segue pra não perder o próximo",
-      },
-    ],
-    generate: generateRoteiros,
-  },
-  {
-    id: "emails",
-    name: "E-mails de Vendas",
-    description: "Assuntos, pré-header e corpo para campanhas de e-mail.",
-    path: "~/templates/emails.ts",
-    tags: ["E-mail", "Vendas", "Copy"],
-    icon: Mail,
-    fields: [
-      {
-        key: "recipient",
-        label: "nome do contato (opcional)",
-        type: "input",
-        placeholder: "Ex.: Marina",
-      },
-      {
-        key: "audience",
-        label: "público-alvo",
-        type: "textarea",
-        placeholder: "Ex.: leads que baixaram o ebook gratuito",
-        required: true,
-      },
-      {
-        key: "company",
-        label: "nome da empresa",
-        type: "input",
-        placeholder: "Ex.: Agência Norte",
-        required: true,
-      },
-      {
-        key: "product",
-        label: "produto / serviço",
-        type: "input",
-        placeholder: "Ex.: consultoria de posicionamento",
-        required: true,
-      },
-      {
-        key: "offer",
-        label: "oferta / bônus (opcional)",
-        type: "input",
-        placeholder: "Ex.: 20% off para os 50 primeiros",
-      },
-      {
-        key: "deadline",
-        label: "prazo (opcional)",
-        type: "input",
-        placeholder: "Ex.: até sexta-feira",
-      },
-      { key: "tone", label: "tom de voz", type: "select", options: TONE_OPTIONS, defaultValue: "persuasivo" },
-      {
-        key: "goal",
-        label: "objetivo",
-        type: "select",
-        options: [
-          { value: "venda", label: "Fechar venda" },
-          { value: "lancamento", label: "Lançamento" },
-          { value: "reengajamento", label: "Reengajamento" },
-        ],
-        defaultValue: "venda",
-      },
-      {
-        key: "cta",
-        label: "chamada para ação (opcional)",
-        type: "input",
-        placeholder: "Ex.: Agendar uma call",
-      },
-    ],
-    generate: generateEmails,
-  },
+const TEMPLATE_IDS: { id: string; path: string; icon: LucideIcon; generate: CopyTemplate["generate"] }[] = [
+  { id: "meta-ads", path: "~/templates/meta-ads.ts", icon: Megaphone, generate: generateMetaAds },
+  { id: "legendas", path: "~/templates/legendas.ts", icon: Captions, generate: generateLegendas },
+  { id: "roteiros", path: "~/templates/roteiros.ts", icon: Video, generate: generateRoteiros },
+  { id: "emails", path: "~/templates/emails.ts", icon: Mail, generate: generateEmails },
 ];
 
-export function getTemplate(id: string): CopyTemplate {
-  return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0];
+const cache = new Map<Locale, CopyTemplate[]>();
+
+/** Build the localized template list for a locale (memoized). */
+export function getTemplates(locale: Locale): CopyTemplate[] {
+  let list = cache.get(locale);
+  if (!list) {
+    const data = TEMPLATE_DATA[locale];
+    list = TEMPLATE_IDS.map(({ id, path, icon, generate }) => {
+      const meta = data.meta[id];
+      return {
+        id,
+        name: meta.name,
+        description: meta.description,
+        path,
+        tags: meta.tags,
+        icon,
+        fields: meta.fields,
+        generate,
+      };
+    });
+    cache.set(locale, list);
+  }
+  return list;
+}
+
+export function getTemplate(locale: Locale, id: string): CopyTemplate {
+  return getTemplates(locale).find((t) => t.id === id) ?? getTemplates(locale)[0];
 }
 
 export function makeCopyTitle(template: CopyTemplate, values: Record<string, string>): string {

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { parseCopyText } from "@/lib/copy-format";
+import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import {
   Check,
@@ -52,14 +53,12 @@ export function CopyOutput({
   saved,
   busy,
 }: CopyOutputProps) {
+  const { t } = useI18n();
   const lines = parseCopyText(typed);
   const hasContent = text.trim().length > 0;
 
   return (
-    <TerminalWindow
-      title="copyforge — output"
-      bodyClassName="p-0"
-    >
+    <TerminalWindow title={t("gen.termOutput")} bodyClassName="p-0">
       {editing ? (
         <div className="p-4">
           <Textarea
@@ -71,11 +70,11 @@ export function CopyOutput({
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button size="sm" onClick={onApplyEdit} disabled={busy || !editText.trim()}>
               <Check className="size-4" />
-              Aplicar alterações
+              {t("out.apply")}
             </Button>
             <Button size="sm" variant="ghost" onClick={onCancelEdit} disabled={busy}>
               <X className="size-4" />
-              Cancelar
+              {t("common.cancel")}
             </Button>
           </div>
         </div>
@@ -84,7 +83,7 @@ export function CopyOutput({
           <div className="max-h-[440px] min-h-[200px] overflow-auto p-4 font-mono text-[13px] leading-6">
             {lines.length === 0 && !isTyping ? (
               <p className="text-muted-foreground">
-                <span className="text-term-dim">//</span> aguardando saída…
+                <span className="text-term-dim">//</span> {t("out.waiting")}
               </p>
             ) : (
               lines.map((line, i) => (
@@ -118,7 +117,7 @@ export function CopyOutput({
               disabled={!hasContent || busy}
             >
               <Copy className="size-4" />
-              Copiar texto
+              {t("common.copy")}
             </Button>
             <Button
               size="sm"
@@ -128,11 +127,11 @@ export function CopyOutput({
               className={saved ? "text-term-green" : ""}
             >
               {saved ? <Check className="size-4" /> : <Save className="size-4" />}
-              {saved ? "Salvo no histórico" : "Salvar no histórico"}
+              {saved ? t("out.saved") : t("out.save")}
             </Button>
             <Button size="sm" variant="outline" onClick={onEdit} disabled={!hasContent || busy}>
               <Pencil className="size-4" />
-              Editar
+              {t("out.edit")}
             </Button>
             <Button
               size="sm"
@@ -146,7 +145,7 @@ export function CopyOutput({
               ) : (
                 <RefreshCw className="size-4" />
               )}
-              Reescrever
+              {t("out.rewrite")}
             </Button>
           </div>
         </>

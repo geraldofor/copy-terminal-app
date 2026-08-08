@@ -7,6 +7,8 @@ import {
 } from "@/components/ui/input-otp";
 
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/i18n";
+import { LanguageSelect } from "@/components/LanguageSelect";
 import { TerminalSquare } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -28,6 +30,7 @@ function resolveRedirectAfterAuth(
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = resolveRedirectAfterAuth(
@@ -57,9 +60,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     } catch (error) {
       console.error("Email sign-in error:", error);
       setError(
-        error instanceof Error
-          ? error.message
-          : "Falha ao enviar o código de verificação. Tente novamente.",
+        error instanceof Error ? error.message : t("auth.errSend"),
       );
       setIsLoading(false);
     }
@@ -75,7 +76,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       navigate(redirect);
     } catch (error) {
       console.error("OTP verification error:", error);
-      setError("O código de verificação digitado está incorreto.");
+      setError(t("auth.errOtp"));
       setIsLoading(false);
       setOtp("");
     }
@@ -90,9 +91,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     } catch (error) {
       console.error("Guest login error:", error);
       setError(
-        `Falha ao entrar como visitante: ${
-          error instanceof Error ? error.message : "Erro desconhecido"
-        }`,
+        t("auth.errGuest", {
+          msg: error instanceof Error ? error.message : "Unknown error",
+        }),
       );
       setIsLoading(false);
     }
@@ -101,17 +102,20 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   return (
     <div className="bg-grid flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <a
-          href="/"
-          className="mb-6 flex items-center justify-center gap-2.5 font-mono text-sm font-bold"
-        >
-          <span className="flex size-8 items-center justify-center rounded-md bg-term-green text-white">
-            <TerminalSquare className="size-4" />
-          </span>
-          <span>
-            <span className="text-term-green">~/</span>copyforge
-          </span>
-        </a>
+        <div className="mb-6 flex items-center justify-between">
+          <a
+            href="/"
+            className="flex items-center gap-2.5 font-mono text-sm font-bold"
+          >
+            <span className="flex size-8 items-center justify-center rounded-md bg-term-green text-white">
+              <TerminalSquare className="size-4" />
+            </span>
+            <span>
+              <span className="text-term-green">~/</span>copyforge
+            </span>
+          </a>
+          <LanguageSelect compact />
+        </div>
 
         <TerminalWindow
           title="copyforge — login"
@@ -120,24 +124,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           {step === "signIn" ? (
             <>
               <h1 className="font-mono text-lg font-bold tracking-tight">
-                {isLoading ? "enviando…" : "$ copyforge login"}
+                {isLoading ? t("auth.sending") : t("auth.loginTitle")}
               </h1>
               <p className="mt-1.5 font-mono text-[11px] leading-5 text-muted-foreground">
-                <span className="text-term-green">//</span> entre com seu e-mail
-                para acessar o painel. Novos usuários ganham{" "}
-                <span className="text-term-green">25 créditos</span> grátis.
+                <span className="text-term-green">//</span> {t("auth.subtitle")}
               </p>
 
               <form onSubmit={handleEmailSubmit} className="mt-5 space-y-4">
                 <label className="block">
                   <span className="mb-1.5 block font-mono text-[11px] text-muted-foreground">
                     <span className="text-term-green">$</span>{" "}
-                    <span className="text-term-dim">email</span>
+                    <span className="text-term-dim">{t("auth.emailLabel")}</span>
                     <span className="text-term-green"> =</span>
                   </span>
                   <Input
                     name="email"
-                    placeholder="nome@exemplo.com"
+                    placeholder={t("auth.emailPlaceholder")}
                     type="email"
                     className="font-mono text-sm"
                     disabled={isLoading}
@@ -154,14 +156,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   className="w-full font-mono"
                   disabled={isLoading}
                 >
-                  {isLoading ? "enviando código…" : "enviar código →"}
+                  {isLoading ? t("auth.sendingCode") : t("auth.sendCode")}
                 </Button>
               </form>
 
               <div className="my-5 flex items-center gap-3">
                 <span className="h-px flex-1 bg-border" />
                 <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  ou
+                  {t("auth.or")}
                 </span>
                 <span className="h-px flex-1 bg-border" />
               </div>
@@ -173,17 +175,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 onClick={handleGuestLogin}
                 disabled={isLoading}
               >
-                continuar como visitante
+                {t("auth.guest")}
               </Button>
             </>
           ) : (
             <>
               <h1 className="font-mono text-lg font-bold tracking-tight">
-                verificar e-mail
+                {t("auth.verifyTitle")}
               </h1>
               <p className="mt-1.5 font-mono text-[11px] leading-5 text-muted-foreground">
-                <span className="text-term-green">//</span> enviamos um código de 6
-                dígitos para <span className="text-foreground">{step.email}</span>
+                <span className="text-term-green">//</span>{" "}
+                {t("auth.verifySubtitle", { email: step.email })}
               </p>
 
               <form onSubmit={handleOtpSubmit} className="mt-5 space-y-4">
@@ -219,16 +221,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   className="w-full font-mono"
                   disabled={isLoading || otp.length !== 6}
                 >
-                  {isLoading ? "verificando…" : "verificar código →"}
+                  {isLoading ? t("auth.verifying") : t("auth.verifyCode")}
                 </Button>
                 <p className="text-center font-mono text-[11px] text-muted-foreground">
-                  não recebeu?{" "}
+                  {t("auth.notReceived")}{" "}
                   <Button
                     variant="link"
                     className="h-auto p-0 font-mono text-[11px] text-term-green"
                     onClick={() => setStep("signIn")}
                   >
-                    tentar novamente
+                    {t("auth.tryAgain")}
                   </Button>
                 </p>
               </form>

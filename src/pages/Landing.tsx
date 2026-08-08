@@ -1,28 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LanguageSelect } from "@/components/LanguageSelect";
 import { useTypewriter } from "@/hooks/use-typewriter";
-import { TEMPLATES } from "@/lib/copy-templates";
+import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, TerminalSquare } from "lucide-react";
 import { BlinkCursor, TerminalWindow } from "@/components/copy/Terminal";
-
-const HERO_TEXT = `$ copyforge run meta-ads --tone persuasivo
-› modelo de linguagem … ok
-› público: criadores de conteúdo … ok
-› tom: persuasivo … ok
-
-## 3 TÍTULOS (A/B/C)
-- Copy que converte, sem chute.
-- Para criadores que querem vender mais.
-- Chega de perder tempo — copyforge resolve.
-
-## TEXTO PRINCIPAL
-Escreva anúncios, legendas e e-mails que
-vendem — em segundos, não em horas.
-
-## CTA
-- Comece grátis hoje →`;
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -30,7 +14,47 @@ const fadeUp = {
 };
 
 export default function Landing() {
-  const typed = useTypewriter(HERO_TEXT, { speed: 11, loop: true, pause: 2800, startDelay: 600 });
+  const { t, templates } = useI18n();
+  const typed = useTypewriter(t("landing.heroText"), {
+    speed: 11,
+    loop: true,
+    pause: 2800,
+    startDelay: 600,
+  });
+
+  const features = [
+    t("landing.feature1"),
+    t("landing.feature2"),
+    t("landing.feature3"),
+  ];
+
+  const steps = [
+    {
+      n: "01",
+      title: t("landing.step1.title"),
+      desc: t("landing.step1.desc"),
+      cmd: "$ copyforge new --template meta-ads",
+    },
+    {
+      n: "02",
+      title: t("landing.step2.title"),
+      desc: t("landing.step2.desc"),
+      cmd: "$ copyforge run --briefing ./brief.md",
+    },
+    {
+      n: "03",
+      title: t("landing.step3.title"),
+      desc: t("landing.step3.desc"),
+      cmd: "$ copyforge save --to library",
+    },
+  ];
+
+  const stats = [
+    { value: "+40k", label: t("landing.stat1.label") },
+    { value: "4", label: t("landing.stat2.label") },
+    { value: "25", label: t("landing.stat3.label") },
+    { value: "99,9%", label: t("landing.stat4.label") },
+  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -47,19 +71,20 @@ export default function Landing() {
           </a>
           <nav className="hidden items-center gap-6 font-mono text-xs text-muted-foreground md:flex">
             <a href="#templates" className="transition-colors hover:text-foreground">
-              <span className="text-term-green">./</span>templates
+              <span className="text-term-green">./</span>{t("nav.templates")}
             </a>
             <a href="#como-funciona" className="transition-colors hover:text-foreground">
-              <span className="text-term-green">./</span>como-funciona
+              <span className="text-term-green">./</span>{t("nav.how")}
             </a>
           </nav>
           <div className="flex items-center gap-2">
+            <LanguageSelect compact />
             <Button asChild variant="ghost" size="sm" className="font-mono">
-              <a href="/auth">entrar</a>
+              <a href="/auth">{t("nav.signin")}</a>
             </Button>
             <Button asChild size="sm" className="font-mono">
               <a href="/auth">
-                começar grátis
+                {t("nav.signup")}
                 <ArrowRight className="size-4" />
               </a>
             </Button>
@@ -73,25 +98,19 @@ export default function Landing() {
           <motion.div initial="hidden" animate="show" variants={fadeUp}>
             <p className="inline-flex items-center gap-2 rounded-full border border-term-green/30 bg-term-soft/70 px-3 py-1 font-mono text-[11px] text-term-green-deep">
               <span className="size-1.5 animate-pulse rounded-full bg-term-green" />
-              copywriting assistido por IA · pt-BR
+              {t("landing.badge")}
             </p>
             <h1 className="mt-5 font-mono text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl">
-              Escreva copy
+              {t("landing.heroLine1")}
               <br />
-              que <span className="text-term-green">converte</span>
+              {t("landing.heroLine2")} <span className="text-term-green">{t("landing.heroAccent")}</span>
               <span className="cursor-blink text-term-green">_</span>
             </h1>
             <p className="mt-5 max-w-md font-mono text-sm leading-6 text-muted-foreground">
-              O terminal de copywriting para criadores de conteúdo e profissionais
-              de marketing. Gere anúncios, legendas, roteiros e e-mails em
-              segundos — com o tom certo para cada marca.
+              {t("landing.heroSub")}
             </p>
             <ul className="mt-6 space-y-2 font-mono text-xs text-foreground/80">
-              {[
-                "4 templates profissionais de copy",
-                "25 créditos grátis para começar",
-                "histórico ilimitado de textos salvos",
-              ].map((item) => (
+              {features.map((item) => (
                 <li key={item} className="flex items-center gap-2">
                   <Check className="size-4 text-term-green" />
                   {item}
@@ -101,17 +120,16 @@ export default function Landing() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button asChild size="lg" className="font-mono">
                 <a href="/auth">
-                  criar conta grátis
+                  {t("landing.ctaFree")}
                   <ArrowRight className="size-4" />
                 </a>
               </Button>
               <Button asChild variant="outline" size="lg" className="font-mono">
-                <a href="#templates">ver templates</a>
+                <a href="#templates">{t("landing.ctaTemplates")}</a>
               </Button>
             </div>
             <p className="mt-4 font-mono text-[11px] text-muted-foreground">
-              <span className="text-term-green">//</span> sem cartão de crédito ·
-              cancele quando quiser
+              <span className="text-term-green">//</span> {t("landing.note")}
             </p>
           </motion.div>
 
@@ -155,8 +173,7 @@ export default function Landing() {
               </pre>
               <div className="mt-4 flex items-center justify-between border-t pt-3 font-mono text-[10px] text-muted-foreground">
                 <span>
-                  <span className="text-term-green">✓</span> 1 copy gerada · 24
-                  créditos restantes
+                  <span className="text-term-green">✓</span> {t("landing.termFooter")}
                 </span>
                 <span className="text-term-dim">exit 0</span>
               </div>
@@ -176,19 +193,18 @@ export default function Landing() {
             className="mx-auto max-w-2xl text-center"
           >
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-term-green">
-              // ls ~/templates
+              {t("landing.sectionTemplatesLabel")}
             </p>
             <h2 className="mt-3 font-mono text-2xl font-bold tracking-tight sm:text-3xl">
-              Templates prontos para cada canal
+              {t("landing.sectionTemplatesTitle")}
             </h2>
             <p className="mt-3 font-mono text-sm leading-6 text-muted-foreground">
-              Cada template tem campos próprios — público-alvo, tom de voz,
-              objetivo — e devolve uma copy estruturada e pronta para publicar.
+              {t("landing.sectionTemplatesDesc")}
             </p>
           </motion.div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {TEMPLATES.map((template, index) => {
+            {templates.map((template, index) => {
               const Icon = template.icon;
               return (
                 <motion.a
@@ -224,7 +240,7 @@ export default function Landing() {
                     ))}
                   </div>
                   <span className="mt-4 font-mono text-[11px] font-semibold text-term-green">
-                    usar template <ArrowRight className="ml-0.5 inline size-3 transition-transform group-hover:translate-x-0.5" />
+                    {t("landing.useTemplate")} <ArrowRight className="ml-0.5 inline size-3 transition-transform group-hover:translate-x-0.5" />
                   </span>
                 </motion.a>
               );
@@ -244,34 +260,15 @@ export default function Landing() {
             className="mx-auto max-w-2xl text-center"
           >
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-term-green">
-              // cat README.md
+              {t("landing.sectionHowLabel")}
             </p>
             <h2 className="mt-3 font-mono text-2xl font-bold tracking-tight sm:text-3xl">
-              Do briefing à publicação em 3 passos
+              {t("landing.sectionHowTitle")}
             </h2>
           </motion.div>
 
           <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {[
-              {
-                n: "01",
-                title: "Monte o briefing",
-                desc: "Preencha público-alvo, produto, tom de voz e objetivo no template escolhido.",
-                cmd: "$ copyforge new --template meta-ads",
-              },
-              {
-                n: "02",
-                title: "Gere a copy",
-                desc: "A IA estrutura variações prontas para testar, com o tom exato que você pediu.",
-                cmd: "$ copyforge run --briefing ./brief.md",
-              },
-              {
-                n: "03",
-                title: "Salve e publique",
-                desc: "Copie, edite ou salve no histórico. Tudo organizado na sua biblioteca.",
-                cmd: "$ copyforge save --to biblioteca",
-              },
-            ].map((step, index) => (
+            {steps.map((step, index) => (
               <motion.div
                 key={step.n}
                 initial={{ opacity: 0, y: 16 }}
@@ -281,7 +278,7 @@ export default function Landing() {
                 className="rounded-md border bg-card p-5"
               >
                 <span className="font-mono text-[11px] font-bold text-term-green">
-                  passo {step.n}
+                  {t("landing.stepLabel", { n: step.n })}
                 </span>
                 <h3 className="mt-2 font-mono text-sm font-bold">{step.title}</h3>
                 <p className="mt-1.5 font-mono text-[11px] leading-5 text-muted-foreground">
@@ -299,12 +296,7 @@ export default function Landing() {
       {/* Stats */}
       <section className="border-t bg-card/40">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-px overflow-hidden border sm:grid-cols-4">
-          {[
-            { value: "+40k", label: "copies geradas" },
-            { value: "4", label: "templates profissionais" },
-            { value: "25", label: "créditos grátis" },
-            { value: "99,9%", label: "tempo no ar" },
-          ].map((stat) => (
+          {stats.map((stat) => (
             <div key={stat.label} className="bg-card px-5 py-8 text-center">
               <p className="font-mono text-2xl font-bold tracking-tight text-term-green">
                 {stat.value}
@@ -327,40 +319,40 @@ export default function Landing() {
             variants={fadeUp}
           >
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-term-green">
-              // pronto para rodar?
+              {t("landing.ctaLabel")}
             </p>
             <h2 className="mt-3 font-mono text-2xl font-bold tracking-tight sm:text-3xl">
-              Sua próxima copy está a um comando de distância
+              {t("landing.ctaTitle")}
             </h2>
             <div className="mx-auto mt-8 max-w-md overflow-hidden rounded-lg border bg-card text-left">
               <div className="border-b bg-muted/50 px-4 py-2 font-mono text-xs text-muted-foreground">
                 copyforge — setup
               </div>
               <div className="space-y-2 p-5 font-mono text-[12.5px] leading-6">
-                <p className="text-term-green">$ copyforge --comecar</p>
+                <p className="text-term-green">$ copyforge --start</p>
                 <p className="text-muted-foreground">
-                  <span className="mr-1.5 text-term-dim">›</span>criando conta
-                  gratuita … <span className="text-term-green">ok</span>
+                  <span className="mr-1.5 text-term-dim">›</span>{t("landing.setup1")}
                 </p>
                 <p className="text-muted-foreground">
-                  <span className="mr-1.5 text-term-dim">›</span>créditos de
-                  boas-vindas: <span className="text-term-green">+25</span>
+                  <span className="mr-1.5 text-term-dim">›</span>{t("landing.setup2")}
                 </p>
                 <p className="text-muted-foreground">
-                  <span className="mr-1.5 text-term-dim">›</span>sem cartão de
-                  crédito · cancele quando quiser
+                  <span className="mr-1.5 text-term-dim">›</span>{t("landing.setup3")}
                 </p>
                 <BlinkCursor className="text-term-green" />
               </div>
             </div>
             <Button asChild size="lg" className="mt-8 font-mono">
               <a href="/auth">
-                criar conta grátis
+                {t("landing.ctaButton")}
                 <ArrowRight className="size-4" />
               </a>
             </Button>
             <p className="mt-3 font-mono text-[11px] text-muted-foreground">
-              já tem conta? <a href="/auth" className="text-term-green underline underline-offset-4 hover:text-term-green-deep">entrar →</a>
+              {t("landing.hasAccount")}{" "}
+              <a href="/auth" className="text-term-green underline underline-offset-4 hover:text-term-green-deep">
+                {t("landing.ctaSignin")}
+              </a>
             </p>
           </motion.div>
         </div>
@@ -372,7 +364,7 @@ export default function Landing() {
           <p>
             <span className="text-term-green">~/</span>copyforge · © 2026
           </p>
-          <p className="text-term-dim">feito para criadores de conteúdo e profissionais de marketing</p>
+          <p className="text-term-dim">{t("landing.footerTagline")}</p>
         </div>
       </footer>
     </div>
