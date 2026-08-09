@@ -30,6 +30,7 @@ const schema = defineSchema(
       isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
 
       role: v.optional(roleValidator), // role of the user. do not remove
+      blocked: v.optional(v.boolean()), // admin flag: user is blocked from generating
 
       // copyforge plan/usage fields
       credits: v.optional(v.number()), // remaining generation credits

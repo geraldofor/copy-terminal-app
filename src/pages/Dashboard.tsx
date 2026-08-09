@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
-import { LogOut, TerminalSquare } from "lucide-react";
+import { LogOut, Shield, TerminalSquare } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -136,6 +136,16 @@ export default function Dashboard() {
                   <span className="size-1.5 rounded-full bg-current" />
                   {t("dash.credits", { n: credits ?? "…" })}
                 </span>
+                {user?.role === "admin" && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/admin")}
+                    className="flex size-8 items-center justify-center rounded-md border border-term-green/40 bg-term-soft text-term-green-deep transition-colors hover:bg-term-green hover:text-white"
+                    title={t("admin.open")}
+                  >
+                    <Shield className="size-4" />
+                  </button>
+                )}
                 <LanguageSelect compact />
                 <button
                   type="button"

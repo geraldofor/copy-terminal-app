@@ -35,6 +35,9 @@ export const saveCopy = mutation({
     if (user === null) {
       throw new ConvexError("Sessão expirada. Entre novamente para continuar.");
     }
+    if (user.blocked) {
+      throw new ConvexError("Conta bloqueada. Entre em contato com o suporte.");
+    }
     return await ctx.db.insert("copies", {
       userId: user._id,
       template: args.template,

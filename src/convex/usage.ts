@@ -45,6 +45,9 @@ export const consumeCredits = mutation({
     if (user === null) {
       throw new ConvexError("Usuário não encontrado.");
     }
+    if (user.blocked) {
+      throw new ConvexError("Conta bloqueada. Entre em contato com o suporte.");
+    }
     const current = user.credits ?? DEFAULT_CREDITS;
     if (current <= 0) {
       throw new ConvexError(
