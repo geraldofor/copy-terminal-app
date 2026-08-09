@@ -13,7 +13,7 @@ import { makeCopyTitle, toneLabel, toneOf, type CopyTemplate } from "@/lib/copy-
 import type { CopyDoc, Usage } from "@/lib/types";
 import { copyToClipboard } from "@/lib/utils";
 import { useI18n } from "@/i18n";
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -46,6 +46,7 @@ export function GeneratorPanel({
 }: GeneratorPanelProps) {
   const consumeCredits = useMutation(api.usage.consumeCredits);
   const saveCopy = useMutation(api.copies.saveCopy);
+  const generateWithGemini = useAction(api.gemini.generateWithGemini);
   const { t, locale, dateLocale } = useI18n();
 
   const [values, setValues] = useState<Record<string, string>>(() =>
@@ -60,6 +61,7 @@ export function GeneratorPanel({
   const [editText, setEditText] = useState("");
   const [busy, setBusy] = useState(false);
   const [lastValues, setLastValues] = useState<Record<string, string>>({});
+  const [engine, setEngine] = useState<string | undefined>();
   const timeouts = useRef<number[]>([]);
 
   const credits = usage?.credits ?? 0;
@@ -117,6 +119,7 @@ export function GeneratorPanel({
     setSaved(false);
     setEditing(false);
     setLastValues(vals);
+    setEngine(undefined);
 
     try {
       await consumeCredits({ amount: 1 });
@@ -143,12 +146,27 @@ export function GeneratorPanel({
         ),
       );
     });
-    timeouts.current.push(
-      window.setTimeout(() => {
-        setResult(template.generate(vals, locale));
-        setPhase("typing");
-      }, 420 * (steps.length + 1) + 150),
-    );
+
+    /* Real AI: call Gemini through the server. Falls back to the local
+       engine automatically when the key is missing or the API fails. */
+    let output = template.generate(vals, locale);
+    let usedEngine: string | undefined;
+    try {
+      const ai = await generateWithGemini({
+        template: template.id,
+        values: vals,
+        locale,
+      });
+      if (ai.ok && ai.text?.trim()) {
+        output = ai.text;
+        usedEngine = ai.model;
+      }
+    } catch {
+      // Server-side action failed — keep the local fallback output.
+    }
+    setResult(output);
+    setEngine(usedEngine);
+    setPhase("typing");
   };
 
   const handleCopy = async () => {
@@ -344,6 +362,7 @@ export function GeneratorPanel({
           onSave={handleSave}
           onEdit={openEdit}
           onRewrite={() => generate(lastValues)}
+          engine={engine}
           editing={editing}
           editText={editText}
           setEditText={setEditText}

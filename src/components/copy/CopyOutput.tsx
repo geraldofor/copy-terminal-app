@@ -28,6 +28,8 @@ export interface CopyOutputProps {
   onEdit: () => void;
   /** Regenerate with the same briefing. */
   onRewrite: () => void;
+  /** AI model that generated the text (undefined when local fallback). */
+  engine?: string;
   editing: boolean;
   editText: string;
   setEditText: (value: string) => void;
@@ -45,6 +47,7 @@ export function CopyOutput({
   onSave,
   onEdit,
   onRewrite,
+  engine,
   editing,
   editText,
   setEditText,
@@ -133,20 +136,30 @@ export function CopyOutput({
               <Pencil className="size-4" />
               {t("out.edit")}
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onRewrite}
-              disabled={busy}
-              className="ml-auto"
-            >
-              {busy ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <RefreshCw className="size-4" />
+            <div className="ml-auto flex items-center gap-2">
+              {engine && (
+                <span
+                  className="hidden items-center gap-1.5 font-mono text-[10px] text-term-green sm:flex"
+                  title={t("out.engineTip")}
+                >
+                  <span className="size-1.5 animate-pulse rounded-full bg-term-green" />
+                  {engine}
+                </span>
               )}
-              {t("out.rewrite")}
-            </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onRewrite}
+                disabled={busy}
+              >
+                {busy ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-4" />
+                )}
+                {t("out.rewrite")}
+              </Button>
+            </div>
           </div>
         </>
       )}
