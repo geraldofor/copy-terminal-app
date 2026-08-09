@@ -2,12 +2,23 @@ import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
-import { Loader2, Shield, ShieldOff, UserPlus, Users } from "lucide-react";
+import { Loader2, Shield, ShieldOff, Trash2, UserPlus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -61,9 +72,11 @@ export default function Admin() {
   const setRole = useMutation(api.admin.setRole);
   const adjustCredits = useMutation(api.admin.adjustCredits);
   const setBlocked = useMutation(api.admin.setBlocked);
+  const deleteUser = useMutation(api.admin.deleteUser);
 
   const [query, setQuery] = useState("");
   const [deltas, setDeltas] = useState<Record<string, string>>({});
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const isAdmin = user?.role === "admin";
   const loading = adminExists === undefined || users === undefined || stats === undefined;
@@ -112,6 +125,17 @@ export default function Admin() {
     } catch (error) {
       toast.error(error instanceof ConvexError ? error.message : t("admin.err"));
     }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteUser({ userId: deleteTarget as never });
+      toast.success(t("admin.deleteOk"));
+    } catch (error) {
+      toast.error(error instanceof ConvexError ? error.message : t("admin.err"));
+    }
+    setDeleteTarget(null);
   };
 
   return (
@@ -364,6 +388,43 @@ export default function Admin() {
                         >
                           {u.blocked ? t("admin.unblock") : t("admin.block")}
                         </Button>
+                      )}
+                      {u._id !== user?._id && (
+                        <AlertDialog
+                          open={deleteTarget === u._id}
+                          onOpenChange={(open) => !open && setDeleteTarget(null)}
+                        >
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 font-mono text-[11px] text-destructive hover:bg-destructive hover:text-white"
+                              onClick={() => setDeleteTarget(u._id)}
+                            >
+                              <Trash2 className="size-3.5" />
+                              {t("admin.delete")}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {t("admin.deleteTitle")}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t("admin.deleteDesc")}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={handleDelete}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                {t("admin.delete")}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       )}
                     </div>
                   </div>

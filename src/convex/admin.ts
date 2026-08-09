@@ -169,3 +169,49 @@ export const setBlocked = mutation({
     await ctx.db.patch(userId, { blocked });
   },
 });
+
+/**
+ * Permanently delete a user, including their saved copies, linked auth
+ * accounts and active sessions. Admin only. You cannot delete yourself.
+ */
+export const deleteUser = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const admin = await requireAdmin(ctx);
+    if (admin._id === userId) {
+      throw new ConvexError("Você não pode excluir seu próprio acesso.");
+    }
+    const user = await ctx.db.get(userId);
+    if (user === null) {
+      throw new ConvexError("Usuário não encontrado.");
+    }
+
+    // Saved copies (cascade)
+    const copies = await ctx.db
+      .query("copies")
+      .withIndex("by_user_created", (q) => q.eq("userId", userId))
+      .collect();
+    for (const copy of copies) {
+      await ctx.db.delete(copy._id);
+    }
+
+    // Linked auth accounts (providers) and active sessions (cascade)
+    const accounts = await ctx.db
+      .query("authAccounts")
+      .withIndex("userIdAndProvider", (q) => q.eq("userId", userId))
+      .collect();
+    for (const account of accounts) {
+      await ctx.db.delete(account._id);
+    }
+    const sessions = await ctx.db
+      .query("authSessions")
+      .withIndex("userId", (q) => q.eq("userId", userId))
+      .collect();
+    for (const session of sessions) {
+      await ctx.db.delete(session._id);
+    }
+
+    await ctx.db.delete(userId);
+    return { ok: true };
+  },
+});
