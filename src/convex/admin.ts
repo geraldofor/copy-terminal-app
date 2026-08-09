@@ -4,17 +4,26 @@ import { mutation, query, QueryCtx } from "./_generated/server";
 import { ROLES, roleValidator, type Role } from "./schema";
 import { DEFAULT_CREDITS } from "./usage";
 
-/** Throws unless the caller is a signed-in user with the admin role. */
-async function requireAdmin(ctx: QueryCtx) {
+/** Returns the signed-in user, or null when not an admin. Never throws. */
+async function getAdminUser(ctx: QueryCtx) {
   const userId = await getAuthUserId(ctx);
   if (userId === null) {
-    throw new ConvexError("Sessão expirada. Entre novamente.");
+    return null;
   }
   const user = await ctx.db.get(userId);
   if (user === null || user.role !== ROLES.ADMIN) {
-    throw new ConvexError("Acesso restrito a administradores.");
+    return null;
   }
   return user;
+}
+
+/** Throws unless the caller is a signed-in user with the admin role. */
+async function requireAdmin(ctx: QueryCtx) {
+  const admin = await getAdminUser(ctx);
+  if (admin === null) {
+    throw new ConvexError("Acesso restrito a administradores.");
+  }
+  return admin;
 }
 
 /** True once at least one admin exists. Public (used by the claim flow). */
@@ -52,11 +61,15 @@ export const claimAdmin = mutation({
   },
 });
 
-/** Platform-wide numbers for the admin overview. */
+/** Platform-wide numbers for the admin overview. Returns null for non-admins
+ * (safe to subscribe from the client without crashing the page). */
 export const adminStats = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx);
+    const admin = await getAdminUser(ctx);
+    if (admin === null) {
+      return null;
+    }
     const users = await ctx.db.query("users").collect();
     const copies = await ctx.db.query("copies").collect();
 
@@ -79,11 +92,15 @@ export const adminStats = query({
   },
 });
 
-/** Every user with their usage summary, newest first. Admin only. */
+/** Every user with their usage summary, newest first. Returns null for
+ * non-admins (safe to subscribe from the client without crashing). */
 export const listUsers = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx);
+    const admin = await getAdminUser(ctx);
+    if (admin === null) {
+      return null;
+    }
     const users = await ctx.db.query("users").collect();
     const copies = await ctx.db.query("copies").collect();
 
