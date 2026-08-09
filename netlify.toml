@@ -6,6 +6,12 @@
   command = "npm run build"
   publish = "dist"
 
+# Vite 7 requires Node ^20.19.0 || >=22.12.0. Pin a compatible version
+# so the build never silently breaks on an older default Node.
+[build.environment]
+  NODE_VERSION = "22"
+
+
 # SPA fallback: /auth, /dashboard e qualquer rota client-side devem
 # servir index.html em vez de retornar 404 ao dar refresh na página.
 [[redirects]]
