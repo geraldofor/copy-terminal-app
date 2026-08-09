@@ -97,6 +97,7 @@ export default function Dashboard() {
           userEmail={user?.email}
           onSignOut={handleSignOut}
           onRecharge={handleRecharge}
+          onOpenAdmin={() => navigate("/admin")}
         />
 
         <main className="min-w-0 flex-1">
@@ -136,16 +137,14 @@ export default function Dashboard() {
                   <span className="size-1.5 rounded-full bg-current" />
                   {t("dash.credits", { n: credits ?? "…" })}
                 </span>
-                {user?.role === "admin" && (
-                  <button
-                    type="button"
-                    onClick={() => navigate("/admin")}
-                    className="flex size-8 items-center justify-center rounded-md border border-term-green/40 bg-term-soft text-term-green-deep transition-colors hover:bg-term-green hover:text-white"
-                    title={t("admin.open")}
-                  >
-                    <Shield className="size-4" />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => navigate("/admin")}
+                  className="flex size-8 items-center justify-center rounded-md border border-term-green/40 bg-term-soft text-term-green-deep transition-colors hover:bg-term-green hover:text-white"
+                  title={t("admin.open")}
+                >
+                  <Shield className="size-4" />
+                </button>
                 <LanguageSelect compact />
                 <button
                   type="button"

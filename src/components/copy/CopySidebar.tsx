@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
-import { Bookmark, LogOut, Plus, TerminalSquare } from "lucide-react";
+import { Bookmark, LogOut, Plus, Shield, TerminalSquare } from "lucide-react";
 
 export type AppView = "gerador" | "biblioteca";
 
@@ -17,6 +17,7 @@ interface CopySidebarProps {
   userEmail?: string;
   onSignOut: () => void;
   onRecharge: () => void;
+  onOpenAdmin: () => void;
   className?: string;
 }
 
@@ -31,6 +32,7 @@ export function CopySidebar({
   userEmail,
   onSignOut,
   onRecharge,
+  onOpenAdmin,
   className,
 }: CopySidebarProps) {
   const { t, templates } = useI18n();
@@ -127,6 +129,21 @@ export function CopySidebar({
           <span className="rounded-full bg-term-soft px-2 py-0.5 font-mono text-[10px] font-semibold text-term-green-deep">
             {savedCount}
           </span>
+        </button>
+      </div>
+
+      {/* Admin */}
+      <div className="px-3 pt-6">
+        <p className="mb-2 px-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="text-term-green">//</span> {t("side.admin")}
+        </p>
+        <button
+          type="button"
+          onClick={onOpenAdmin}
+          className="flex w-full items-center gap-3 rounded-md border-l-2 border-transparent px-3 py-2.5 text-left transition-colors hover:bg-accent/60"
+        >
+          <Shield className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <span className="text-[13px] font-medium">{t("admin.open")}</span>
         </button>
       </div>
 
