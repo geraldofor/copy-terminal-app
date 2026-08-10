@@ -2,7 +2,7 @@
 
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
-import { action, internalAction } from "./_generated/server";
+import { action, internalAction, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import {
   annualTotal,
@@ -43,6 +43,23 @@ const RETRY_MS = 15 * 60 * 1000;
 function paypalBase(): string {
   return process.env.PAYPAL_ENV === "live" ? API_BASE.live : API_BASE.sandbox;
 }
+
+/**
+ * Public PayPal Client ID for the JS SDK. The client id is public by design
+ * (it ships in the browser bundle anyway); the secret never leaves the server.
+ * Frontend prefers import.meta.env.VITE_PAYPAL_CLIENT_ID and falls back to
+ * this query so the checkout works even when the frontend was built before
+ * the keys were added.
+ */
+export const getPaypalClientId = query({
+  handler: (): string | null => {
+    return (
+      process.env.VITE_PAYPAL_CLIENT_ID ??
+      process.env.PAYPAL_CLIENT_ID ??
+      null
+    );
+  },
+});
 
 async function accessToken(): Promise<string> {
   const clientId = process.env.PAYPAL_CLIENT_ID;
