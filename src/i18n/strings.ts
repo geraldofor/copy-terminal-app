@@ -136,7 +136,7 @@ vendem — em segundos, não em horas.
   "side.credits": "● {credits}/{total} créditos",
   "side.creditsLow": "⚠ créditos baixos — recarregue abaixo",
   "side.creditsInfo": "// 1 crédito = 1 copy gerada",
-  "side.recharge": "+10 créditos (demo)",
+  "side.recharge": "comprar créditos",
 
   /* Generator */
   "gen.req": "Preencha o campo \"{field}\".",
@@ -243,6 +243,24 @@ vendem — em segundos, não em horas.
   "admin.deniedTitle": "acesso restrito",
   "admin.deniedDesc": "Esta área é exclusiva para administradores.",
   "admin.loading": "carregando…",
+
+  /* Plans */
+  "plan.subtitle": "escolha um pacote de créditos e pague com PayPal",
+  "plan.current": "// créditos atuais: {n}",
+  "plan.perCopy": "≈ R$ {unit} por copy gerada",
+  "plan.popular": "mais popular",
+  "plan.buying": "processando pagamento…",
+  "plan.ok": "Pagamento confirmado — +{credits} créditos",
+  "plan.errCreate": "Não foi possível iniciar o pagamento no PayPal.",
+  "plan.errCapture": "O pagamento não foi confirmado pelo PayPal. Tente novamente.",
+  "plan.errEnv": "PayPal ainda não configurado — adicione VITE_PAYPAL_CLIENT_ID.",
+  "plan.notConfiguredTitle": "paypal ainda não configurado",
+  "plan.notConfiguredDesc": "Adicione PAYPAL_CLIENT_ID e PAYPAL_CLIENT_SECRET nas chaves do projeto (modo sandbox por padrão) e defina VITE_PAYPAL_CLIENT_ID no front. Depois é só testar com uma conta sandbox do PayPal.",
+  "plan.secure": "// pagamento processado pelo PayPal — nenhum cartão é salvo no app",
+  "plan.creditNote": "1 crédito = 1 copy gerada",
+  "plan.demoHint": "// quer testar sem pagar? use a recarga demo abaixo",
+  "plan.demo": "+10 créditos (demo)",
+  "plan.back": "← voltar ao painel",
 } as const;
 
 export type UiStrings = { [K in keyof typeof pt]: string };
@@ -369,7 +387,7 @@ sell — in seconds, not hours.
   "side.credits": "● {credits}/{total} credits",
   "side.creditsLow": "⚠ low credits — recharge below",
   "side.creditsInfo": "// 1 credit = 1 generated copy",
-  "side.recharge": "+10 credits (demo)",
+  "side.recharge": "buy credits",
 
   /* Generator */
   "gen.req": "Please fill in \"{field}\".",
@@ -476,6 +494,24 @@ sell — in seconds, not hours.
   "admin.deniedTitle": "restricted access",
   "admin.deniedDesc": "This area is for administrators only.",
   "admin.loading": "loading…",
+
+  /* Plans */
+  "plan.subtitle": "pick a credit pack and pay with PayPal",
+  "plan.current": "// current credits: {n}",
+  "plan.perCopy": "≈ R$ {unit} per generated copy",
+  "plan.popular": "most popular",
+  "plan.buying": "processing payment…",
+  "plan.ok": "Payment confirmed — +{credits} credits",
+  "plan.errCreate": "Could not start the PayPal payment.",
+  "plan.errCapture": "Payment was not confirmed by PayPal. Try again.",
+  "plan.errEnv": "PayPal not configured yet — add VITE_PAYPAL_CLIENT_ID.",
+  "plan.notConfiguredTitle": "paypal not configured yet",
+  "plan.notConfiguredDesc": "Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to the project keys (sandbox mode by default) and set VITE_PAYPAL_CLIENT_ID in the frontend. Then test with a PayPal sandbox account.",
+  "plan.secure": "// payment processed by PayPal — no card is stored in the app",
+  "plan.creditNote": "1 credit = 1 generated copy",
+  "plan.demoHint": "// want to try without paying? use the demo top-up below",
+  "plan.demo": "+10 credits (demo)",
+  "plan.back": "← back to dashboard",
 };
 
 const es: UiStrings = {
@@ -600,7 +636,7 @@ vendan — en segundos, no en horas.
   "side.credits": "● {credits}/{total} créditos",
   "side.creditsLow": "⚠ créditos bajos — recarga abajo",
   "side.creditsInfo": "// 1 crédito = 1 copy generado",
-  "side.recharge": "+10 créditos (demo)",
+  "side.recharge": "comprar créditos",
 
   /* Generator */
   "gen.req": "Completa el campo \"{field}\".",
@@ -707,6 +743,24 @@ vendan — en segundos, no en horas.
   "admin.deniedTitle": "acceso restringido",
   "admin.deniedDesc": "Esta área es exclusiva para administradores.",
   "admin.loading": "cargando…",
+
+  /* Plans */
+  "plan.subtitle": "elige un paquete de créditos y paga con PayPal",
+  "plan.current": "// créditos actuales: {n}",
+  "plan.perCopy": "≈ R$ {unit} por copy generada",
+  "plan.popular": "más popular",
+  "plan.buying": "procesando pago…",
+  "plan.ok": "Pago confirmado — +{credits} créditos",
+  "plan.errCreate": "No se pudo iniciar el pago en PayPal.",
+  "plan.errCapture": "El pago no fue confirmado por PayPal. Inténtalo de nuevo.",
+  "plan.errEnv": "PayPal aún no configurado — añade VITE_PAYPAL_CLIENT_ID.",
+  "plan.notConfiguredTitle": "paypal aún no configurado",
+  "plan.notConfiguredDesc": "Añade PAYPAL_CLIENT_ID y PAYPAL_CLIENT_SECRET en las claves del proyecto (modo sandbox por defecto) y define VITE_PAYPAL_CLIENT_ID en el frontend. Luego prueba con una cuenta sandbox de PayPal.",
+  "plan.secure": "// pago procesado por PayPal — ninguna tarjeta se guarda en la app",
+  "plan.creditNote": "1 crédito = 1 copy generada",
+  "plan.demoHint": "// ¿quieres probar sin pagar? usa la recarga demo de abajo",
+  "plan.demo": "+10 créditos (demo)",
+  "plan.back": "← volver al panel",
 };
 
 export const STRINGS: Record<Locale, UiStrings> = { pt, en, es };

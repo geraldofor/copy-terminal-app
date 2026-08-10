@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
-import { Bookmark, LogOut, Plus, Shield, TerminalSquare } from "lucide-react";
+import { Bookmark, CreditCard, LogOut, Shield, TerminalSquare } from "lucide-react";
 
 export type AppView = "gerador" | "biblioteca";
 
@@ -175,7 +175,7 @@ export function CopySidebar({
             className="mt-2.5 w-full font-mono text-[11px]"
             onClick={onRecharge}
           >
-            <Plus className="size-3.5" />
+            <CreditCard className="size-3.5" />
             {t("side.recharge")}
           </Button>
         </div>

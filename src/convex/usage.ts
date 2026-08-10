@@ -1,6 +1,6 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./users";
 
 /** Free credits granted to every new account. */
@@ -59,6 +59,28 @@ export const consumeCredits = mutation({
       credits: next,
       creditsTotal: user.creditsTotal ?? DEFAULT_CREDITS,
       generatedTotal: (user.generatedTotal ?? 0) + amount,
+    });
+    return { credits: next };
+  },
+});
+
+/**
+ * Grant credits to a specific user. Internal only — called by the PayPal
+ * capture action after the payment is confirmed. Adds to the balance and
+ * to the lifetime total of the current plan.
+ */
+export const grantCredits = internalMutation({
+  args: { userId: v.id("users"), amount: v.number() },
+  handler: async (ctx, { userId, amount }) => {
+    const user = await ctx.db.get(userId);
+    if (user === null) {
+      throw new ConvexError("Usuário não encontrado.");
+    }
+    const current = user.credits ?? DEFAULT_CREDITS;
+    const next = current + amount;
+    await ctx.db.patch(userId, {
+      credits: next,
+      creditsTotal: Math.max(user.creditsTotal ?? DEFAULT_CREDITS, next),
     });
     return { credits: next };
   },

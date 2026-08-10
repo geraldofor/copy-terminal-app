@@ -14,6 +14,7 @@ import "./index.css";
 const Landing = lazy(() => import("./pages/Landing.tsx"));
 const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
+const Plans = lazy(() => import("./pages/Plans.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
@@ -86,9 +87,19 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 
 
+/** Per-route document titles (SEO). Falls back to the product name. */
+const ROUTE_TITLES: Record<string, string> = {
+  "/": "CopyForge — Terminal de Copywriting com IA",
+  "/auth": "Entrar — CopyForge",
+  "/dashboard": "Painel — CopyForge",
+  "/plans": "Planos e Créditos — CopyForge",
+  "/admin": "Admin — CopyForge",
+};
+
 function RouteSyncer() {
   const location = useLocation();
   useEffect(() => {
+    document.title = ROUTE_TITLES[location.pathname] ?? "CopyForge — Copywriting com IA";
     window.parent.postMessage(
       { type: "iframe-route-change", path: location.pathname },
       "*",
@@ -132,6 +143,14 @@ createRoot(document.getElementById("root")!).render(
                   element={
                     <RequireAuth>
                       <Dashboard />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/plans"
+                  element={
+                    <RequireAuth>
+                      <Plans />
                     </RequireAuth>
                   }
                 />

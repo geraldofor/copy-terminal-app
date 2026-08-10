@@ -6,12 +6,10 @@ import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n";
-import { useMutation, useQuery } from "convex/react";
-import { ConvexError } from "convex/values";
+import { useQuery } from "convex/react";
 import { LogOut, Shield, TerminalSquare } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { toast } from "sonner";
 
 function StatCard({
   label,
@@ -46,7 +44,6 @@ function StatCard({
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const addCredits = useMutation(api.usage.addCredits);
   const { t, templates, getTemplate } = useI18n();
 
   const usage = useQuery(api.usage.getUsage);
@@ -61,16 +58,7 @@ export default function Dashboard() {
   const pct =
     credits !== null && creditsTotal ? Math.round((credits / creditsTotal) * 100) : 0;
 
-  const handleRecharge = async () => {
-    try {
-      await addCredits({ amount: 10 });
-      toast.success(t("dash.rechargeOk"));
-    } catch (error) {
-      toast.error(
-        error instanceof ConvexError ? error.message : t("dash.rechargeErr"),
-      );
-    }
-  };
+  const handleRecharge = () => navigate("/plans");
 
   const handleSignOut = async () => {
     await signOut();
