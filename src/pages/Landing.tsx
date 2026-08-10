@@ -4,6 +4,7 @@ import { LanguageSelect } from "@/components/LanguageSelect";
 import { useTypewriter } from "@/hooks/use-typewriter";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { CREDIT_PACKS, formatBRL } from "@/convex/packs";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, TerminalSquare } from "lucide-react";
 import { BlinkCursor, TerminalWindow } from "@/components/copy/Terminal";
@@ -75,6 +76,9 @@ export default function Landing() {
             </a>
             <a href="#como-funciona" className="transition-colors hover:text-foreground">
               <span className="text-term-green">./</span>{t("nav.how")}
+            </a>
+            <a href="#planos" className="transition-colors hover:text-foreground">
+              <span className="text-term-green">./</span>{t("nav.plans")}
             </a>
           </nav>
           <div className="flex items-center gap-2">
@@ -306,6 +310,105 @@ export default function Landing() {
               </p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Plans */}
+      <section id="planos" className="border-t">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={fadeUp}
+            className="mx-auto max-w-2xl text-center"
+          >
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-term-green">
+              {t("landing.sectionPlansLabel")}
+            </p>
+            <h2 className="mt-3 font-mono text-2xl font-bold tracking-tight sm:text-3xl">
+              {t("landing.sectionPlansTitle")}
+            </h2>
+            <p className="mt-3 font-mono text-sm leading-6 text-muted-foreground">
+              {t("landing.sectionPlansDesc")}
+            </p>
+          </motion.div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {/* Free tier */}
+            <motion.a
+              href="/auth"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.4 }}
+              className="group flex flex-col rounded-md border bg-card p-4 transition-all hover:-translate-y-1 hover:border-term-green/50 hover:shadow-[0_12px_28px_-16px_rgba(60,122,77,0.45)]"
+            >
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                <span className="text-term-green">$</span> pack:
+                <span className="text-foreground"> free</span>
+              </p>
+              <p className="mt-3 font-mono text-4xl font-bold tracking-tight">25</p>
+              <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                {t("landing.planFreeHint")}
+              </p>
+              <div className="mt-4 border-t border-dashed pt-4">
+                <p className="font-mono text-2xl font-bold text-term-green-deep">R$ 0,00</p>
+                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                  {t("landing.planFree")}
+                </p>
+              </div>
+              <span className="mt-auto pt-5 font-mono text-[11px] font-semibold text-term-green">
+                {t("landing.planGet")}{" "}
+                <ArrowRight className="ml-0.5 inline size-3 transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </motion.a>
+
+            {CREDIT_PACKS.map((pack, index) => (
+              <motion.a
+                key={pack.id}
+                href="/auth?returnTo=/plans"
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.4, delay: (index + 1) * 0.06 }}
+                className={cn(
+                  "group relative flex flex-col rounded-md border bg-card p-4 transition-all hover:-translate-y-1 hover:shadow-[0_12px_28px_-16px_rgba(60,122,77,0.45)]",
+                  pack.popular
+                    ? "border-term-green/50 hover:border-term-green"
+                    : "hover:border-term-green/40",
+                )}
+              >
+                {pack.popular && (
+                  <span className="absolute -top-2.5 left-4 rounded-full border border-term-green/40 bg-term-soft px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-term-green-deep">
+                    {t("plan.popular")}
+                  </span>
+                )}
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  <span className="text-term-green">$</span> pack:
+                  <span className="text-foreground"> {pack.id}</span>
+                </p>
+                <p className="mt-3 font-mono text-4xl font-bold tracking-tight">{pack.credits}</p>
+                <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                  {t("plan.creditNote")}
+                </p>
+                <div className="mt-4 border-t border-dashed pt-4">
+                  <p className="font-mono text-2xl font-bold text-term-green-deep">
+                    R$ {formatBRL(pack.priceBRL)}
+                  </p>
+                  <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                    {t("plan.perCopy", {
+                      unit: formatBRL(pack.priceBRL / pack.credits),
+                    })}
+                  </p>
+                </div>
+                <span className="mt-auto pt-5 font-mono text-[11px] font-semibold text-term-green">
+                  {t("landing.planSee")}{" "}
+                  <ArrowRight className="ml-0.5 inline size-3 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </motion.a>
+            ))}
+          </div>
         </div>
       </section>
 

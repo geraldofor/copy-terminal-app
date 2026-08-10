@@ -42,6 +42,25 @@ function detectLocale(): Locale {
   return "pt";
 }
 
+/** Countries grouped by the closest supported UI locale. */
+const PT_COUNTRIES = new Set(["BR", "PT", "AO", "MZ", "CV", "GW", "ST", "TL", "MO"]);
+const ES_COUNTRIES = new Set([
+  "ES", "MX", "AR", "CO", "CL", "PE", "VE", "EC", "GT", "CU", "BO",
+  "DO", "HN", "PY", "SV", "NI", "CR", "PA", "UY", "PR", "GQ",
+]);
+const EN_COUNTRIES = new Set([
+  "US", "GB", "CA", "AU", "IE", "NZ", "ZA", "IN", "PH", "SG",
+  "NG", "GH", "KE", "JM", "TT", "MY", "HK", "PK", "BD", "LK",
+]);
+
+function countryToLocale(countryCode: string | undefined | null): Locale | null {
+  const code = (countryCode ?? "").toUpperCase();
+  if (PT_COUNTRIES.has(code)) return "pt";
+  if (ES_COUNTRIES.has(code)) return "es";
+  if (EN_COUNTRIES.has(code)) return "en";
+  return null;
+}
+
 function interpolate(
   template: string,
   vars?: Record<string, string | number>,
@@ -67,6 +86,46 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
+
+  // IP-based fallback: only when there is no stored preference AND the
+  // browser language gives no hint (e.g. "fr", "de", "ja"), a free GeoIP
+  // lookup maps the visitor's country to the closest supported locale.
+  // Never overrides an explicit choice made while the lookup is in flight.
+  useEffect(() => {
+    const hasStored = (() => {
+      try {
+        return localStorage.getItem(STORAGE_KEY) !== null;
+      } catch {
+        return true; // storage unavailable → skip geo fallback
+      }
+    })();
+    if (hasStored) return;
+
+    const nav = (navigator.language || "").toLowerCase();
+    if (nav.startsWith("pt") || nav.startsWith("es") || nav.startsWith("en")) {
+      return;
+    }
+
+    let cancelled = false;
+    fetch("https://ipwho.is/")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { country_code?: string } | null) => {
+        if (cancelled) return;
+        try {
+          if (localStorage.getItem(STORAGE_KEY) !== null) return;
+        } catch {
+          /* fall through */
+        }
+        const geo = countryToLocale(data?.country_code);
+        if (geo) setLocale(geo);
+      })
+      .catch(() => {
+        /* offline or blocked — the pt default stays */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [setLocale]);
 
   const value = useMemo<I18nContextValue>(
     () => ({

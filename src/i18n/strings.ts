@@ -88,6 +88,15 @@ vendem — em segundos, não em horas.
 ## CTA
 - Comece grátis hoje →`,
 
+  "nav.plans": "planos",
+  "landing.sectionPlansLabel": "// cat planos.md",
+  "landing.sectionPlansTitle": "Planos simples, créditos justos",
+  "landing.sectionPlansDesc": "comece com 25 créditos grátis e compre mais quando precisar — 1 crédito = 1 copy gerada",
+  "landing.planFree": "grátis",
+  "landing.planFreeHint": "25 créditos de boas-vindas · sem cartão",
+  "landing.planGet": "pegar grátis",
+  "landing.planSee": "ver planos",
+
   /* Auth */
   "auth.loginTitle": "$ copyforge login",
   "auth.sending": "enviando…",
@@ -340,6 +349,15 @@ sell — in seconds, not hours.
 ## CTA
 - Start free today →`,
 
+  "nav.plans": "plans",
+  "landing.sectionPlansLabel": "// cat plans.md",
+  "landing.sectionPlansTitle": "Simple plans, fair credits",
+  "landing.sectionPlansDesc": "start with 25 free credits and buy more when you need — 1 credit = 1 generated copy",
+  "landing.planFree": "free",
+  "landing.planFreeHint": "25 welcome credits · no card required",
+  "landing.planGet": "get free",
+  "landing.planSee": "view plans",
+
   /* Auth */
   "auth.loginTitle": "$ copyforge login",
   "auth.sending": "sending…",
@@ -588,6 +606,15 @@ vendan — en segundos, no en horas.
 
 ## CTA
 - Empieza gratis hoy →`,
+
+  "nav.plans": "planes",
+  "landing.sectionPlansLabel": "// cat planes.md",
+  "landing.sectionPlansTitle": "Planes simples, créditos justos",
+  "landing.sectionPlansDesc": "empieza con 25 créditos gratis y compra más cuando lo necesites — 1 crédito = 1 copy generada",
+  "landing.planFree": "gratis",
+  "landing.planFreeHint": "25 créditos de bienvenida · sin tarjeta",
+  "landing.planGet": "obtener gratis",
+  "landing.planSee": "ver planes",
 
   /* Auth */
   "auth.loginTitle": "$ copyforge login",
