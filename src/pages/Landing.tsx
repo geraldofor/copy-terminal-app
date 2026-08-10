@@ -1,3 +1,4 @@
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LanguageSelect } from "@/components/LanguageSelect";
@@ -57,6 +58,14 @@ export default function Landing() {
     { value: "99,9%", label: t("landing.stat4.label") },
   ];
 
+  const faqs = [
+    { q: t("landing.faq1q"), a: t("landing.faq1a") },
+    { q: t("landing.faq2q"), a: t("landing.faq2a") },
+    { q: t("landing.faq3q"), a: t("landing.faq3a") },
+    { q: t("landing.faq4q"), a: t("landing.faq4a") },
+    { q: t("landing.faq5q"), a: t("landing.faq5a") },
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
@@ -79,6 +88,9 @@ export default function Landing() {
             </a>
             <a href="#planos" className="transition-colors hover:text-foreground">
               <span className="text-term-green">./</span>{t("nav.plans")}
+            </a>
+            <a href="#faq" className="transition-colors hover:text-foreground">
+              <span className="text-term-green">./</span>{t("nav.faq")}
             </a>
           </nav>
           <div className="flex items-center gap-2">
@@ -409,6 +421,47 @@ export default function Landing() {
               </motion.a>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="border-t bg-card/40">
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={fadeUp}
+            className="text-center"
+          >
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-term-green">
+              {t("landing.sectionFaqLabel")}
+            </p>
+            <h2 className="mt-3 font-mono text-2xl font-bold tracking-tight sm:text-3xl">
+              {t("landing.sectionFaqTitle")}
+            </h2>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.4 }}
+          >
+            <Accordion type="single" collapsible className="mt-8 overflow-hidden rounded-md border bg-card">
+              {faqs.map((faq, index) => (
+                <AccordionItem key={index} value={`faq-${index}`} className="px-4">
+                  <AccordionTrigger className="py-4 font-mono text-[13px] font-medium hover:no-underline">
+                    <span className="mr-2 text-term-green">$</span>
+                    {faq.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="font-mono text-xs leading-6 text-muted-foreground">
+                    {faq.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </motion.div>
         </div>
       </section>
 
