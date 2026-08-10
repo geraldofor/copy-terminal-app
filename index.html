@@ -16,7 +16,7 @@
   <meta name="keywords" content="copywriting, IA, anúncios, meta ads, google ads, legendas, roteiros, reels, shorts, e-mail marketing, gerador de texto" />
   <meta name="theme-color" content="#fafafa" />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://copyforge.app/" />
+  <link rel="canonical" href="https://copy-terminal.netlify.app/" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
@@ -27,7 +27,7 @@
     content="Anúncios, legendas, roteiros e e-mails que convertem — gerados em segundos com o tom certo para cada marca."
   />
   <meta property="og:locale" content="pt_BR" />
-  <meta property="og:url" content="https://copyforge.app/" />
+  <meta property="og:url" content="https://copy-terminal.netlify.app/" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
@@ -54,6 +54,18 @@
       "inLanguage": ["pt-BR", "en", "es"],
       "featureList": "Geração de copy com IA Gemini, 4 templates profissionais, histórico de textos salvos, planos por créditos"
     }
+  </script>
+
+  <!-- Keep canonical / og:url in sync with the real host (netlify subdomain
+       today, custom domain later). Google renders JS, so this is reliable. -->
+  <script>
+    (function () {
+      var url = window.location.origin + window.location.pathname;
+      var canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.setAttribute('href', url);
+      var ogUrl = document.querySelector('meta[property="og:url"]');
+      if (ogUrl) ogUrl.setAttribute('content', url);
+    })();
   </script>
 </head>
 
