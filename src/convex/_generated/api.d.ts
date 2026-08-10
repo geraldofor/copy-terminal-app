@@ -16,6 +16,7 @@ import type * as gemini from "../gemini.js";
 import type * as http from "../http.js";
 import type * as packs from "../packs.js";
 import type * as payments from "../payments.js";
+import type * as paypal from "../paypal.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as usage from "../usage.js";
 import type * as users from "../users.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   packs: typeof packs;
   payments: typeof payments;
+  paypal: typeof paypal;
   subscriptions: typeof subscriptions;
   usage: typeof usage;
   users: typeof users;
