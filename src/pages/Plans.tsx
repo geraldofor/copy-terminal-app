@@ -51,11 +51,12 @@ export default function Plans() {
   const clientIdResults = useQueries({
     paypalClientId: { query: api.paypal.getPaypalClientId, args: {} },
   });
+  // On the very first render the query result is still undefined; treat it
+  // as "not loaded yet" instead of crashing on `.status`.
+  const clientIdResult = clientIdResults.paypalClientId;
   const paypalClientId =
     PAYPAL_CLIENT_ID ??
-    (clientIdResults.paypalClientId.status === "success"
-      ? clientIdResults.paypalClientId.data
-      : undefined) ??
+    (clientIdResult?.status === "success" ? clientIdResult.data : undefined) ??
     undefined;
   const createPayPalOrder = useAction(api.payments.createPayPalOrder);
   const capturePayPalOrder = useAction(api.payments.capturePayPalOrder);
