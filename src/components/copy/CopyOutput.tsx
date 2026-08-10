@@ -139,11 +139,11 @@ export function CopyOutput({
             <div className="ml-auto flex items-center gap-2">
               {engine && (
                 <span
-                  className="hidden items-center gap-1.5 font-mono text-[10px] text-term-green sm:flex"
+                  className="flex min-w-0 items-center gap-1.5 font-mono text-[10px] text-term-green"
                   title={t("out.engineTip")}
                 >
-                  <span className="size-1.5 animate-pulse rounded-full bg-term-green" />
-                  {engine}
+                  <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-term-green" />
+                  <span className="truncate">{engine}</span>
                 </span>
               )}
               <Button
