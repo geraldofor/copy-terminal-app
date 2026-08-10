@@ -87,6 +87,33 @@ export const grantCredits = internalMutation({
 });
 
 /**
+ * Grant one subscription billing cycle's credits, capped by the plan's
+ * rollover limit. The cap never reduces a balance that is already above
+ * it (e.g. from paid top-ups); it only bounds what a subscription can
+ * accumulate. Internal only — called by the PayPal subscription flow.
+ */
+export const grantSubscriptionCycle = internalMutation({
+  args: {
+    userId: v.id("users"),
+    amount: v.number(),
+    cap: v.number(),
+  },
+  handler: async (ctx, { userId, amount, cap }): Promise<{ credits: number }> => {
+    const user = await ctx.db.get(userId);
+    if (user === null) {
+      throw new ConvexError("Usuário não encontrado.");
+    }
+    const current = user.credits ?? DEFAULT_CREDITS;
+    const next = Math.min(current + amount, Math.max(cap, current));
+    await ctx.db.patch(userId, {
+      credits: next,
+      creditsTotal: Math.max(user.creditsTotal ?? DEFAULT_CREDITS, next),
+    });
+    return { credits: next };
+  },
+});
+
+/**
  * Demo helper: top up credits so the product can be explored freely.
  */
 export const addCredits = mutation({

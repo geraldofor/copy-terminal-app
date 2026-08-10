@@ -5,7 +5,7 @@ import { LanguageSelect } from "@/components/LanguageSelect";
 import { useTypewriter } from "@/hooks/use-typewriter";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
-import { CREDIT_PACKS, formatBRL } from "@/convex/packs";
+import { SUBSCRIPTION_PLANS, annualPerMonth, formatUSD } from "@/convex/packs";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, TerminalSquare } from "lucide-react";
 import { BlinkCursor, TerminalWindow } from "@/components/copy/Terminal";
@@ -357,7 +357,7 @@ export default function Landing() {
               className="group flex flex-col rounded-md border bg-card p-4 transition-all hover:-translate-y-1 hover:border-term-green/50 hover:shadow-[0_12px_28px_-16px_rgba(60,122,77,0.45)]"
             >
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                <span className="text-term-green">$</span> pack:
+                <span className="text-term-green">$</span> plan:
                 <span className="text-foreground"> free</span>
               </p>
               <p className="mt-3 font-mono text-4xl font-bold tracking-tight">25</p>
@@ -365,7 +365,7 @@ export default function Landing() {
                 {t("landing.planFreeHint")}
               </p>
               <div className="mt-4 border-t border-dashed pt-4">
-                <p className="font-mono text-2xl font-bold text-term-green-deep">R$ 0,00</p>
+                <p className="font-mono text-2xl font-bold text-term-green-deep">$0</p>
                 <p className="mt-1 font-mono text-[11px] text-muted-foreground">
                   {t("landing.planFree")}
                 </p>
@@ -376,50 +376,64 @@ export default function Landing() {
               </span>
             </motion.a>
 
-            {CREDIT_PACKS.map((pack, index) => (
-              <motion.a
-                key={pack.id}
-                href="/auth?returnTo=/plans"
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.4, delay: (index + 1) * 0.06 }}
-                className={cn(
-                  "group relative flex flex-col rounded-md border bg-card p-4 transition-all hover:-translate-y-1 hover:shadow-[0_12px_28px_-16px_rgba(60,122,77,0.45)]",
-                  pack.popular
-                    ? "border-term-green/50 hover:border-term-green"
-                    : "hover:border-term-green/40",
-                )}
-              >
-                {pack.popular && (
-                  <span className="absolute -top-2.5 left-4 rounded-full border border-term-green/40 bg-term-soft px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-term-green-deep">
-                    {t("plan.popular")}
+            {SUBSCRIPTION_PLANS.filter((plan) => plan.priceUSD > 0).map(
+              (plan, index) => (
+                <motion.a
+                  key={plan.id}
+                  href="/auth?returnTo=/plans"
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.4, delay: (index + 1) * 0.06 }}
+                  className={cn(
+                    "group relative flex flex-col rounded-md border bg-card p-4 transition-all hover:-translate-y-1 hover:shadow-[0_12px_28px_-16px_rgba(60,122,77,0.45)]",
+                    plan.popular
+                      ? "border-term-green/50 hover:border-term-green"
+                      : "hover:border-term-green/40",
+                  )}
+                >
+                  {plan.popular && (
+                    <span className="absolute -top-2.5 left-4 rounded-full border border-term-green/40 bg-term-soft px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-term-green-deep">
+                      {t("plan.popular")}
+                    </span>
+                  )}
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    <span className="text-term-green">$</span> plan:
+                    <span className="text-foreground"> {plan.id}</span>
+                  </p>
+                  <p className="mt-3 font-mono text-3xl font-bold tracking-tight">
+                    ${formatUSD(plan.priceUSD)}
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {t("landing.planPerMonth")}
+                    </span>
+                  </p>
+                  <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                    {t("landing.planCreditsMo", { n: plan.credits })}
+                  </p>
+                  <div className="mt-4 border-t border-dashed pt-4">
+                    <p className="font-mono text-[11px] leading-4 text-term-green-deep">
+                      {t("landing.planTrial")} ·{" "}
+                      {t("landing.planRollover", { n: plan.rolloverCap })}
+                    </p>
+                    {plan.seats && (
+                      <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                        {t("landing.planSeats", { n: plan.seats })}
+                        {plan.api ? ` · ${t("landing.planApi")}` : ""}
+                      </p>
+                    )}
+                    <p className="mt-1.5 font-mono text-[10px] text-muted-foreground">
+                      {t("landing.planBilled", {
+                        price: `$${formatUSD(annualPerMonth(plan))}`,
+                      })}
+                    </p>
+                  </div>
+                  <span className="mt-auto pt-5 font-mono text-[11px] font-semibold text-term-green">
+                    {t("landing.planSee")}{" "}
+                    <ArrowRight className="ml-0.5 inline size-3 transition-transform group-hover:translate-x-0.5" />
                   </span>
-                )}
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  <span className="text-term-green">$</span> pack:
-                  <span className="text-foreground"> {pack.id}</span>
-                </p>
-                <p className="mt-3 font-mono text-4xl font-bold tracking-tight">{pack.credits}</p>
-                <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                  {t("plan.creditNote")}
-                </p>
-                <div className="mt-4 border-t border-dashed pt-4">
-                  <p className="font-mono text-2xl font-bold text-term-green-deep">
-                    R$ {formatBRL(pack.priceBRL)}
-                  </p>
-                  <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-                    {t("plan.perCopy", {
-                      unit: formatBRL(pack.priceBRL / pack.credits),
-                    })}
-                  </p>
-                </div>
-                <span className="mt-auto pt-5 font-mono text-[11px] font-semibold text-term-green">
-                  {t("landing.planSee")}{" "}
-                  <ArrowRight className="ml-0.5 inline size-3 transition-transform group-hover:translate-x-0.5" />
-                </span>
-              </motion.a>
-            ))}
+                </motion.a>
+              ),
+            )}
           </div>
         </div>
       </section>

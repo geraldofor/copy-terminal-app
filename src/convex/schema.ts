@@ -47,6 +47,24 @@ const schema = defineSchema(
       input: v.any(), // the briefing values used to generate it
       createdAt: v.number(), // ms timestamp for sorting
     }).index("by_user_created", ["userId", "createdAt"]),
+
+    // PayPal recurring subscriptions (plans from packs.ts)
+    subscriptions: defineTable({
+      userId: v.id("users"),
+      paypalSubscriptionId: v.string(),
+      planId: v.string(), // plan id from packs.ts
+      cycle: v.union(v.literal("monthly"), v.literal("annual")),
+      status: v.string(), // APPROVAL_PENDING | ACTIVE | SUSPENDED | CANCELLED | EXPIRED
+      currency: v.string(),
+      monthlyCredits: v.number(),
+      rolloverCap: v.number(),
+      creditsGranted: v.number(), // cycles granted so far
+      lastPaymentAt: v.optional(v.number()),
+      lastGrantedAt: v.optional(v.number()),
+      createdAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_paypal", ["paypalSubscriptionId"]),
   },
   {
     schemaValidation: false,
