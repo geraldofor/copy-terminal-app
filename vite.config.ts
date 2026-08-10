@@ -89,6 +89,38 @@ export default defineConfig({
       // up missing convex_values.js, crashing the preview with
       // "error loading dynamically imported module".
       'convex/values',
+      // Same problem, one level up: routes are lazy-loaded, so their Radix
+      // primitives (accordion, select, dialog, dropdown-menu, ...) are only
+      // discovered dynamically. If the optimizer cache is rebuilt between
+      // requests, the browser can 404 on the old pre-bundled module and
+      // crash the preview. Pre-bundling every installed Radix package at
+      // startup makes the dep files stable for the whole session.
+      '@radix-ui/react-accordion',
+      '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-aspect-ratio',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-collapsible',
+      '@radix-ui/react-context-menu',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-hover-card',
+      '@radix-ui/react-label',
+      '@radix-ui/react-menubar',
+      '@radix-ui/react-navigation-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-progress',
+      '@radix-ui/react-radio-group',
+      '@radix-ui/react-scroll-area',
+      '@radix-ui/react-select',
+      '@radix-ui/react-separator',
+      '@radix-ui/react-slider',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-switch',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-toggle',
+      '@radix-ui/react-toggle-group',
+      '@radix-ui/react-tooltip',
       'framer-motion',
     ],
   },
