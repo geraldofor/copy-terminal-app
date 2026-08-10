@@ -28,8 +28,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-/** Client ID for the PayPal JS SDK (public — safe to ship). */
-const BUILD_TIME_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as
+/** Client ID for the PayPal JS SDK (public — safe to ship). Comes from
+ *  VITE_PAYPAL_CLIENT_ID at build time — set it in the project's Keys / API
+ *  keys UI and in your host's build env (e.g. Netlify environment vars). */
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as
   | string
   | undefined;
 
@@ -41,10 +43,6 @@ export default function Plans() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const usage = useQuery(api.usage.getUsage);
-  // Fallback: when the build-time env var is missing (keys added after the
-  // frontend was built), read the same value from the backend env.
-  const serverClientId = useQuery(api.paypal.getPaypalClientId);
-  const paypalClientId = BUILD_TIME_CLIENT_ID ?? serverClientId ?? undefined;
   const createPayPalOrder = useAction(api.payments.createPayPalOrder);
   const capturePayPalOrder = useAction(api.payments.capturePayPalOrder);
   const createPayPalSubscription = useAction(api.payments.createPayPalSubscription);
@@ -273,7 +271,7 @@ export default function Plans() {
                 <Button
                   size="sm"
                   className="mt-4 w-full font-mono text-[11px]"
-                  disabled={subscribing !== null || !paypalClientId}
+                  disabled={subscribing !== null || !PAYPAL_CLIENT_ID}
                   onClick={() => handleSubscribe(plan)}
                 >
                   <CreditCard className="size-3.5" />
@@ -344,7 +342,7 @@ export default function Plans() {
                     <Loader2 className="size-4 animate-spin" />
                     {t("plan.buying")}
                   </div>
-                ) : !paypalClientId ? (
+                ) : !PAYPAL_CLIENT_ID ? (
                   <p className="rounded-md border border-term-amber/40 bg-term-amber/10 px-3 py-2 font-mono text-[11px] leading-4 text-term-amber">
                     {t("plan.errEnv")}
                   </p>
@@ -400,7 +398,7 @@ export default function Plans() {
         </header>
 
         {/* Not-configured warning */}
-        {!paypalClientId && (
+        {!PAYPAL_CLIENT_ID && (
           <div className="mt-8 rounded-md border border-term-amber/40 bg-term-amber/10 p-4">
             <p className="flex items-center gap-2 font-mono text-sm font-semibold text-term-amber">
               <Zap className="size-4" />
@@ -416,10 +414,10 @@ export default function Plans() {
         {subscriptionsSection}
 
         {/* Top-ups (PayPal SDK loads only when configured) */}
-        {paypalClientId ? (
+        {PAYPAL_CLIENT_ID ? (
           <PayPalScriptProvider
             options={{
-              clientId: paypalClientId,
+              clientId: PAYPAL_CLIENT_ID,
               currency,
               intent: "capture",
               components: "buttons",
