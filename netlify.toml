@@ -3,7 +3,11 @@
 # então o Netlify apenas serve os arquivos estáticos de dist/.
 
 [build]
-  command = "npm run build"
+  # Se CONVEX_DEPLOY_KEY estiver configurado (ver instruções do Convex),
+  # deploya as funções do backend para o deployment de produção e depois
+  # builda o frontend apontando para ele. Sem a chave, faz só o build
+  # normal (os botões PayPal continuam funcionando via VITE_PAYPAL_CLIENT_ID).
+  command = "bash -c 'if [ -n \"$CONVEX_DEPLOY_KEY\" ]; then npx convex deploy --cmd \"npm run build\"; else npm run build; fi'"
   publish = "dist"
 
 # Vite 7 requires Node ^20.19.0 || >=22.12.0. Pin a compatible version
