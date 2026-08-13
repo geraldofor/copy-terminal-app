@@ -48,6 +48,35 @@ const schema = defineSchema(
       createdAt: v.number(), // ms timestamp for sorting
     }).index("by_user_created", ["userId", "createdAt"]),
 
+    // Manual payment orders (bridge flow: customer pays → admin confirms → credits)
+    manualOrders: defineTable({
+      userId: v.id("users"),
+      userEmail: v.optional(v.string()), // snapshot for the admin view
+      itemType: v.union(v.literal("pack"), v.literal("subscription")),
+      itemId: v.string(), // pack id or plan id from packs.ts
+      itemName: v.string(), // human label snapshot (e.g. "pack:pro")
+      credits: v.number(), // credits granted on confirmation
+      amount: v.number(), // amount to pay (numeric)
+      currency: v.string(), // "BRL" | "USD"
+      reference: v.string(), // human reference code, e.g. CF-AB12CD
+      status: v.union(
+        v.literal("pending"),
+        v.literal("confirmed"),
+        v.literal("cancelled"),
+      ),
+      confirmedAt: v.optional(v.number()),
+      confirmedBy: v.optional(v.id("users")),
+      cancelledAt: v.optional(v.number()),
+    })
+      .index("by_user", ["userId"])
+      .index("by_status", ["status"]),
+
+    // App settings (key → value), e.g. manual payment instructions
+    settings: defineTable({
+      key: v.string(),
+      value: v.any(),
+    }).index("by_key", ["key"]),
+
     // PayPal recurring subscriptions (plans from packs.ts)
     subscriptions: defineTable({
       userId: v.id("users"),

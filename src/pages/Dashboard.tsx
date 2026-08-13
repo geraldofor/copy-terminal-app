@@ -48,6 +48,7 @@ export default function Dashboard() {
 
   const usage = useQuery(api.usage.getUsage);
   const copies = useQuery(api.copies.listCopies) ?? [];
+  const pendingOrders = useQuery(api.manualPayments.listPendingOrders);
 
   const [view, setView] = useState<AppView>("gerador");
   const [selectedId, setSelectedId] = useState(templates[0].id);
@@ -83,6 +84,7 @@ export default function Dashboard() {
           credits={credits}
           creditsTotal={creditsTotal}
           userEmail={user?.email}
+          pendingOrdersCount={pendingOrders}
           onSignOut={handleSignOut}
           onRecharge={handleRecharge}
           onOpenAdmin={() => navigate("/admin")}
@@ -128,10 +130,15 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => navigate("/admin")}
-                  className="flex size-8 items-center justify-center rounded-md border border-term-green/40 bg-term-soft text-term-green-deep transition-colors hover:bg-term-green hover:text-white"
+                  className="relative flex size-8 items-center justify-center rounded-md border border-term-green/40 bg-term-soft text-term-green-deep transition-colors hover:bg-term-green hover:text-white"
                   title={t("admin.open")}
                 >
                   <Shield className="size-4" />
+                  {pendingOrders != null && pendingOrders > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-term-amber font-mono text-[9px] font-bold text-white">
+                      {pendingOrders}
+                    </span>
+                  )}
                 </button>
                 <LanguageSelect compact />
                 <button

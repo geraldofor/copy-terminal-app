@@ -14,6 +14,7 @@ import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as copies from "../copies.js";
 import type * as gemini from "../gemini.js";
 import type * as http from "../http.js";
+import type * as manualPayments from "../manualPayments.js";
 import type * as packs from "../packs.js";
 import type * as payments from "../payments.js";
 import type * as paypal from "../paypal.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   copies: typeof copies;
   gemini: typeof gemini;
   http: typeof http;
+  manualPayments: typeof manualPayments;
   packs: typeof packs;
   payments: typeof payments;
   paypal: typeof paypal;

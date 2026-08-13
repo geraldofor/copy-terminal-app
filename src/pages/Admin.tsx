@@ -1,4 +1,5 @@
 import { api } from "@/convex/_generated/api";
+import { formatBRL, formatUSD } from "@/convex/packs";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -16,10 +17,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
-import { Loader2, Shield, ShieldOff, Trash2, UserPlus, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+  CheckCircle2,
+  HandCoins,
+  Loader2,
+  Save,
+  Shield,
+  ShieldOff,
+  Trash2,
+  UserPlus,
+  Users,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -35,6 +48,20 @@ type AdminUser = {
   creditsTotal: number;
   generatedTotal: number;
   savedCount: number;
+};
+
+type ManualOrder = {
+  _id: string;
+  createdAt: number;
+  itemType: "pack" | "subscription";
+  itemId: string;
+  itemName: string;
+  credits: number;
+  amount: number;
+  currency: string;
+  reference: string;
+  status: "pending" | "confirmed" | "cancelled";
+  userEmail: string | null;
 };
 
 function StatCard({
@@ -74,9 +101,92 @@ export default function Admin() {
   const setBlocked = useMutation(api.admin.setBlocked);
   const deleteUser = useMutation(api.admin.deleteUser);
 
+  const orders = useQuery(api.manualPayments.listOrders);
+  const pendingCount = useQuery(api.manualPayments.listPendingOrders);
+  const manualInfo = useQuery(api.manualPayments.getManualPaymentInfo);
+  const confirmOrder = useMutation(api.manualPayments.confirmOrder);
+  const cancelOrder = useMutation(api.manualPayments.cancelOrder);
+  const saveManualPaymentInfo = useMutation(
+    api.manualPayments.saveManualPaymentInfo,
+  );
+
   const [query, setQuery] = useState("");
   const [deltas, setDeltas] = useState<Record<string, string>>({});
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [instructions, setInstructions] = useState("");
+  const [syncedInstructions, setSyncedInstructions] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<ManualOrder | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<ManualOrder | null>(null);
+
+  // Load the saved payment instructions once the query resolves.
+  useEffect(() => {
+    if (manualInfo !== undefined && !syncedInstructions) {
+      setSyncedInstructions(true);
+      setInstructions(manualInfo.instructions);
+    }
+  }, [manualInfo, syncedInstructions]);
+
+  const formatOrderAmount = (order: ManualOrder) =>
+    order.currency === "BRL"
+      ? `R$ ${formatBRL(order.amount)}`
+      : `US$ ${formatUSD(order.amount)}`;
+
+  const orderStatusPill = (status: ManualOrder["status"]) => {
+    const className =
+      status === "confirmed"
+        ? "border-term-green/40 bg-term-soft text-term-green-deep"
+        : status === "cancelled"
+          ? "border-border text-muted-foreground"
+          : "border-term-amber/40 bg-term-amber/10 text-term-amber";
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider",
+          className,
+        )}
+      >
+        {status === "confirmed"
+          ? t("manual.confirmed", { credits: "" })
+          : status === "cancelled"
+            ? t("manual.cancelled")
+            : t("manual.pending")}
+      </span>
+    );
+  };
+
+  const handleConfirmOrder = async () => {
+    if (!confirmTarget) return;
+    try {
+      await confirmOrder({ orderId: confirmTarget._id as never });
+      toast.success(t("manual.confirmedOk"));
+    } catch (error) {
+      toast.error(error instanceof ConvexError ? error.message : t("manual.err"));
+    }
+    setConfirmTarget(null);
+  };
+
+  const handleCancelOrder = async () => {
+    if (!cancelTarget) return;
+    try {
+      await cancelOrder({ orderId: cancelTarget._id as never });
+      toast.success(t("manual.cancelledOrder"));
+    } catch (error) {
+      toast.error(error instanceof ConvexError ? error.message : t("manual.err"));
+    }
+    setCancelTarget(null);
+  };
+
+  const handleSaveConfig = async () => {
+    setSavingConfig(true);
+    try {
+      await saveManualPaymentInfo({ instructions });
+      toast.success(t("manual.configSaved"));
+    } catch (error) {
+      toast.error(error instanceof ConvexError ? error.message : t("manual.err"));
+    }
+    setSavingConfig(false);
+  };
 
   const isAdmin = user?.role === "admin";
   const loading = adminExists === undefined || users === undefined || stats === undefined;
@@ -237,6 +347,119 @@ export default function Admin() {
                 value={stats.generatedTotal}
                 hint={t("admin.statGeneratedHint")}
               />
+            </section>
+
+            {/* Manual payment orders */}
+            <section className="mt-8">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-mono text-sm font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  <HandCoins className="mr-1.5 inline size-4 text-term-green" />
+                  {t("manual.adminSection")}
+                  {pendingCount != null && pendingCount > 0 && (
+                    <span className="ml-2 text-term-amber">({pendingCount} ⚠)</span>
+                  )}
+                </h2>
+                <p className="font-mono text-[11px] text-muted-foreground">
+                  {t("manual.adminSectionDesc")}
+                </p>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-md border">
+                <div className="hidden grid-cols-[1.2fr_1.4fr_0.8fr_0.8fr_1fr_1fr] gap-3 border-b bg-card px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground sm:grid">
+                  <span>{t("manual.colOrder")}</span>
+                  <span>{t("manual.colUser")}</span>
+                  <span>{t("manual.colItem")}</span>
+                  <span>{t("manual.colAmount")}</span>
+                  <span>{t("manual.colStatus")}</span>
+                  <span className="text-right">{t("admin.colActions")}</span>
+                </div>
+
+                {!orders || orders.length === 0 ? (
+                  <div className="bg-card px-4 py-10 text-center font-mono text-xs text-muted-foreground">
+                    {t("manual.noOrders")}
+                  </div>
+                ) : (
+                  orders.map((order) => (
+                    <div
+                      key={order._id}
+                      className="grid grid-cols-1 gap-2 border-b bg-card px-4 py-3 last:border-b-0 sm:grid-cols-[1.2fr_1.4fr_0.8fr_0.8fr_1fr_1fr] sm:items-center sm:gap-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-mono text-xs font-semibold">
+                          {order.reference}
+                        </p>
+                        <p className="font-mono text-[10px] text-muted-foreground">
+                          {new Date(order.createdAt).toLocaleDateString(dateLocale)}
+                        </p>
+                      </div>
+                      <p className="truncate font-mono text-xs text-muted-foreground">
+                        {order.userEmail ?? "—"}
+                      </p>
+                      <p className="font-mono text-xs">{order.itemName}</p>
+                      <p className="font-mono text-xs font-semibold">
+                        {formatOrderAmount(order)}
+                      </p>
+                      <div>{orderStatusPill(order.status)}</div>
+                      <div className="flex flex-wrap items-center justify-start gap-1.5 sm:justify-end">
+                        {order.status === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="h-7 px-2 font-mono text-[11px]"
+                              onClick={() => setConfirmTarget(order)}
+                            >
+                              <CheckCircle2 className="size-3.5" />
+                              {t("manual.confirm")}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 font-mono text-[11px]"
+                              onClick={() => setCancelTarget(order)}
+                            >
+                              <XCircle className="size-3.5" />
+                              {t("manual.cancel")}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
+            {/* Manual payment instructions config */}
+            <section className="mt-8 rounded-md border bg-card p-4">
+              <h2 className="font-mono text-sm font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                <Save className="mr-1.5 inline size-4 text-term-green" />
+                {t("manual.configTitle")}
+              </h2>
+              <p className="mt-1 font-mono text-[11px] leading-4 text-muted-foreground">
+                {t("manual.configDesc")}
+              </p>
+              <Textarea
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                rows={4}
+                className="mt-3 font-mono text-xs leading-5"
+                placeholder={"PIX: ...\nPayPal.me: ...\nBanco: ..."}
+              />
+              <div className="mt-3 flex justify-end">
+                <Button
+                  size="sm"
+                  className="font-mono text-[11px]"
+                  onClick={handleSaveConfig}
+                  disabled={savingConfig}
+                >
+                  {savingConfig ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Save className="size-3.5" />
+                  )}
+                  {t("manual.configSave")}
+                </Button>
+              </div>
             </section>
 
             <section className="mt-8">
@@ -431,6 +654,59 @@ export default function Admin() {
                 ))}
               </div>
             </section>
+
+            {/* Confirm / cancel order dialogs */}
+            <AlertDialog
+              open={!!confirmTarget}
+              onOpenChange={(open) => !open && setConfirmTarget(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("manual.confirmTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t("manual.confirmDesc", {
+                      ref: confirmTarget?.reference ?? "",
+                      credits: confirmTarget?.credits ?? "",
+                      email: confirmTarget?.userEmail ?? "",
+                    })}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleConfirmOrder}
+                    className="bg-term-green hover:bg-term-green/90"
+                  >
+                    {t("manual.confirm")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog
+              open={!!cancelTarget}
+              onOpenChange={(open) => !open && setCancelTarget(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("manual.cancelTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t("manual.cancelDesc", {
+                      ref: cancelTarget?.reference ?? "",
+                    })}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCancelOrder}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    {t("manual.cancel")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </>
         )}
       </div>

@@ -15,6 +15,8 @@ interface CopySidebarProps {
   credits: number | null;
   creditsTotal: number | null;
   userEmail?: string;
+  /** Number of pending manual payments (null for non-admins). */
+  pendingOrdersCount?: number | null;
   onSignOut: () => void;
   onRecharge: () => void;
   onOpenAdmin: () => void;
@@ -30,6 +32,7 @@ export function CopySidebar({
   credits,
   creditsTotal,
   userEmail,
+  pendingOrdersCount,
   onSignOut,
   onRecharge,
   onOpenAdmin,
@@ -143,7 +146,12 @@ export function CopySidebar({
           className="flex w-full items-center gap-3 rounded-md border-l-2 border-transparent px-3 py-2.5 text-left transition-colors hover:bg-accent/60"
         >
           <Shield className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
-          <span className="text-[13px] font-medium">{t("admin.open")}</span>
+          <span className="flex-1 text-[13px] font-medium">{t("admin.open")}</span>
+          {pendingOrdersCount !== null && pendingOrdersCount !== undefined && pendingOrdersCount > 0 && (
+            <span className="flex size-5 items-center justify-center rounded-full bg-term-amber font-mono text-[10px] font-bold text-white">
+              {pendingOrdersCount}
+            </span>
+          )}
         </button>
       </div>
 

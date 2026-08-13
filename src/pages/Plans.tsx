@@ -11,17 +11,29 @@ import {
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAction, useMutation, useQueries, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import {
   ArrowLeft,
   Check,
+  Clock,
+  Copy,
   CreditCard,
+  HandCoins,
   Loader2,
   Plus,
   ShieldCheck,
   Sparkles,
+  X,
   Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -38,8 +50,21 @@ const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as
 
 type BillingCycle = "monthly" | "annual";
 
+type ManualOrder = {
+  _id: string;
+  createdAt: number;
+  itemType: "pack" | "subscription";
+  itemId: string;
+  itemName: string;
+  credits: number;
+  amount: number;
+  currency: string;
+  reference: string;
+  status: "pending" | "confirmed" | "cancelled";
+};
+
 export default function Plans() {
-  const { t, locale } = useI18n();
+  const { t, locale, dateLocale } = useI18n();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -54,9 +79,27 @@ export default function Plans() {
   const activatePayPalSubscription = useAction(api.payments.activatePayPalSubscription);
   const addCredits = useMutation(api.usage.addCredits);
 
+  const manualInfo = useQuery(api.manualPayments.getManualPaymentInfo);
+  const myOrders = useQuery(api.manualPayments.getMyOrders);
+  const createManualOrder = useMutation(api.manualPayments.createManualOrder);
+  const cancelMyOrder = useMutation(api.manualPayments.cancelMyOrder);
+
   const [billing, setBilling] = useState<BillingCycle>("monthly");
   const [busyTopUp, setBusyTopUp] = useState<string | null>(null);
   const [subscribing, setSubscribing] = useState<string | null>(null);
+  const [activeOrder, setActiveOrder] = useState<ManualOrder | null>(null);
+  const [manualBusy, setManualBusy] = useState<string | null>(null);
+  const [copiedRef, setCopiedRef] = useState(false);
+
+  // Live order: keep the dialog in sync with the backend (admin confirmation
+  // flips the status in real time through the reactive getMyOrders query).
+  const liveOrder =
+    myOrders?.find((order) => order._id === activeOrder?._id) ?? activeOrder;
+
+  const formatOrderPrice = (order: ManualOrder) =>
+    order.currency === "BRL"
+      ? `R$ ${formatBRL(order.amount)}`
+      : `US$ ${formatUSD(order.amount)}`;
 
   const credits = usage?.credits ?? null;
   // pt-BR users see BRL top-ups; international visitors pay in USD.
@@ -139,6 +182,78 @@ export default function Plans() {
         error instanceof ConvexError ? error.message : t("dash.rechargeErr"),
       );
     }
+  };
+
+  const handleManualBuy = async (
+    itemType: "pack" | "subscription",
+    itemId: string,
+    currency: "BRL" | "USD",
+  ) => {
+    setManualBusy(itemId);
+    try {
+      const { order } = await createManualOrder({ itemType, itemId, currency });
+      setActiveOrder(order);
+    } catch (error) {
+      toast.error(
+        error instanceof ConvexError ? error.message : t("manual.createErr"),
+      );
+    } finally {
+      setManualBusy(null);
+    }
+  };
+
+  const copyReference = async (reference: string) => {
+    try {
+      await navigator.clipboard.writeText(reference);
+      setCopiedRef(true);
+      setTimeout(() => setCopiedRef(false), 1500);
+    } catch {
+      toast.error(t("common.copyError"));
+    }
+  };
+
+  const handleCancelOrder = async (order: ManualOrder) => {
+    try {
+      await cancelMyOrder({ orderId: order._id as never });
+      toast.success(t("manual.cancelledOk"));
+      if (activeOrder?._id === order._id) setActiveOrder(null);
+    } catch (error) {
+      toast.error(
+        error instanceof ConvexError ? error.message : t("manual.cancelErr"),
+      );
+    }
+  };
+
+  const orderStatusPill = (order: ManualOrder) => {
+    const className =
+      order.status === "confirmed"
+        ? "border-term-green/40 bg-term-soft text-term-green-deep"
+        : order.status === "cancelled"
+          ? "border-border text-muted-foreground"
+          : "border-term-amber/40 bg-term-amber/10 text-term-amber";
+    const Icon =
+      order.status === "confirmed"
+        ? Check
+        : order.status === "cancelled"
+          ? X
+          : Clock;
+    const label =
+      order.status === "confirmed"
+        ? t("manual.confirmed", { credits: order.credits })
+        : order.status === "cancelled"
+          ? t("manual.cancelled")
+          : t("manual.pending");
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider",
+          className,
+        )}
+      >
+        <Icon className="size-3" />
+        {label}
+      </span>
+    );
   };
 
   const planFeatures = (plan: SubscriptionPlan) => {
@@ -283,6 +398,22 @@ export default function Plans() {
                   {t("plan.subscribe")}
                 </Button>
               )}
+              {!free && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="mt-2 w-full font-mono text-[11px] text-muted-foreground hover:text-foreground"
+                  disabled={subscribing !== null || manualBusy !== null}
+                  onClick={() => handleManualBuy("subscription", plan.id, "USD")}
+                >
+                  {manualBusy === plan.id ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <HandCoins className="size-3.5" />
+                  )}
+                  {t("manual.subscribeShort")}
+                </Button>
+              )}
             </div>
           );
         })}
@@ -341,17 +472,13 @@ export default function Plans() {
                 </p>
               </div>
 
-              <div className="mt-5 flex-1">
+              <div className="mt-5 flex-1 space-y-2">
                 {busyTopUp === pack.id ? (
                   <div className="flex h-10 items-center justify-center gap-2 rounded-md border font-mono text-xs text-muted-foreground">
                     <Loader2 className="size-4 animate-spin" />
                     {t("plan.buying")}
                   </div>
-                ) : !paypalClientId ? (
-                  <p className="rounded-md border border-term-amber/40 bg-term-amber/10 px-3 py-2 font-mono text-[11px] leading-4 text-term-amber">
-                    {t("plan.errEnv")}
-                  </p>
-                ) : (
+                ) : paypalClientId ? (
                   <PayPalButtons
                     style={{ layout: "horizontal", color: "gold", shape: "rect", label: "paypal", tagline: false }}
                     disabled={busyTopUp !== null}
@@ -367,7 +494,21 @@ export default function Plans() {
                       toast.error(t("plan.errCreate"));
                     }}
                   />
-                )}
+                ) : null}
+                <Button
+                  size="sm"
+                  variant={paypalClientId ? "outline" : "default"}
+                  className="w-full font-mono text-[11px]"
+                  disabled={manualBusy !== null || busyTopUp !== null}
+                  onClick={() => handleManualBuy("pack", pack.id, currency)}
+                >
+                  {manualBusy === pack.id ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <HandCoins className="size-3.5" />
+                  )}
+                  {t("manual.buy")}
+                </Button>
               </div>
             </div>
           );
@@ -450,7 +591,146 @@ export default function Plans() {
             </Button>
           </div>
         </div>
+
+        {/* My manual payment orders */}
+        <div className="mt-10">
+          <p className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            <span className="text-term-green">//</span> {t("manual.myOrders")}
+            <span className="ml-2 text-term-dim">({myOrders?.length ?? 0})</span>
+          </p>
+          {!myOrders || myOrders.length === 0 ? (
+            <p className="mt-2 rounded-md border border-dashed bg-card/60 px-4 py-5 font-mono text-xs text-muted-foreground">
+              {t("manual.myOrdersEmpty")}
+            </p>
+          ) : (
+            <ul className="mt-3 divide-y rounded-md border bg-card">
+              {myOrders.map((order) => (
+                <li
+                  key={order._id}
+                  className="flex flex-wrap items-center gap-3 px-4 py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono text-xs font-semibold">
+                      <span className="text-term-green">{order.reference}</span>
+                      <span className="ml-2 text-muted-foreground">
+                        {order.itemName}
+                      </span>
+                    </p>
+                    <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+                      {new Date(order.createdAt).toLocaleDateString(dateLocale)} ·{" "}
+                      {formatOrderPrice(order)}
+                    </p>
+                  </div>
+                  {orderStatusPill(order)}
+                  {order.status === "pending" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 font-mono text-[11px] text-muted-foreground hover:text-destructive"
+                      onClick={() => handleCancelOrder(order)}
+                    >
+                      <X className="size-3.5" />
+                      {t("manual.cancel")}
+                    </Button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
+
+      {/* Manual payment dialog */}
+      <Dialog
+        open={!!activeOrder}
+        onOpenChange={(open) => !open && setActiveOrder(null)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono text-sm">
+              <span className="text-term-green">$</span>{" "}
+              {t("manual.orderTitle", { ref: liveOrder?.reference ?? "…" })}
+            </DialogTitle>
+            <DialogDescription className="font-mono text-xs">
+              {t("manual.amount")}:{" "}
+              <span className="font-semibold text-foreground">
+                {liveOrder ? formatOrderPrice(liveOrder) : "…"}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Reference code */}
+            <div className="rounded-md border border-dashed p-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                {t("manual.referenceLabel")}
+              </p>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <code className="font-mono text-lg font-bold tracking-wider text-term-green-deep">
+                  {liveOrder?.reference}
+                </code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="font-mono text-[11px]"
+                  onClick={() => copyReference(liveOrder?.reference ?? "")}
+                >
+                  {copiedRef ? (
+                    <Check className="size-3.5" />
+                  ) : (
+                    <Copy className="size-3.5" />
+                  )}
+                  {copiedRef ? t("manual.copiedRef") : t("manual.copyRef")}
+                </Button>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                {t("manual.instructionsLabel")}
+              </p>
+              <p className="mt-1.5 whitespace-pre-wrap rounded-md border bg-card px-3 py-2.5 font-mono text-xs leading-5 text-foreground/90">
+                {manualInfo?.instructions
+                  ? manualInfo.instructions
+                  : t("manual.instructionsEmpty")}
+              </p>
+            </div>
+
+            {/* Live status */}
+            <div className="flex items-center justify-between gap-2 rounded-md border bg-card px-3 py-2.5">
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {t("manual.statusCol")}
+              </span>
+              {liveOrder && orderStatusPill(liveOrder)}
+            </div>
+
+            <p className="font-mono text-[10px] leading-4 text-muted-foreground">
+              {t("manual.note")}
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2">
+            {liveOrder?.status === "pending" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-mono text-[11px]"
+                onClick={() => handleCancelOrder(liveOrder)}
+              >
+                {t("manual.cancel")}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              className="font-mono text-[11px]"
+              onClick={() => setActiveOrder(null)}
+            >
+              {t("manual.close")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
