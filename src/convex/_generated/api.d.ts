@@ -12,6 +12,7 @@ import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as copies from "../copies.js";
+import type * as diagnose from "../diagnose.js";
 import type * as gemini from "../gemini.js";
 import type * as http from "../http.js";
 import type * as packs from "../packs.js";
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   "auth/emailOtp": typeof auth_emailOtp;
   copies: typeof copies;
+  diagnose: typeof diagnose;
   gemini: typeof gemini;
   http: typeof http;
   packs: typeof packs;
