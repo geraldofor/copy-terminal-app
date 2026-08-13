@@ -289,6 +289,43 @@ function billingCyclesFor(plan: SubscriptionPlan, cycle: "monthly" | "annual") {
   return billingCycles;
 }
 
+async function paypalPlanId(productId: string, planIdStr: string, cycle: "monthly" | "annual", plan: SubscriptionPlan): Promise<string> {
+  const token = await accessToken();
+  const planName = `CopyForge ${planIdStr} (${cycle})`;
+
+  const listRes = await fetch(
+    `${paypalBase()}/v1/billing/plans?product_id=${productId}&page_size=20&total_required=true`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (listRes.ok) {
+    const list = (await listRes.json()) as { plans?: Array<{ id?: string; name?: string; status?: string }> };
+    const existing = list.plans?.find(p => p.name === planName && p.status === 'ACTIVE');
+    if (existing?.id) return existing.id;
+  }
+
+  const res = await fetch(`${paypalBase()}/v1/billing/plans`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      product_id: productId,
+      name: planName,
+      billing_cycles: billingCyclesFor(plan, cycle),
+      payment_preferences: {
+        auto_bill_outstanding: true,
+        payment_failure_threshold: 2,
+      },
+    }),
+  });
+  const data = (await res.json()) as { id?: string };
+  if (!res.ok || !data.id) {
+    throw new ConvexError("Não foi possível configurar o plano no PayPal.");
+  }
+  return data.id;
+}
+
 type SubscriptionPatch = {
   status?: string;
   lastPaymentAt?: number;
@@ -323,6 +360,7 @@ export const createPayPalSubscription = action({
 
     const token = await accessToken();
     const productId = await paypalProductId();
+    const ppPlanId = await paypalPlanId(productId, planId, cycle, plan);
 
     const res = await fetch(`${paypalBase()}/v1/billing/subscriptions`, {
       method: "POST",
@@ -332,15 +370,7 @@ export const createPayPalSubscription = action({
         "PayPal-Request-Id": `copyforge_sub_${userId}_${planId}_${cycle}_${Date.now()}`,
       },
       body: JSON.stringify({
-        plan: {
-          product_id: productId,
-          name: `CopyForge ${planId} (${cycle})`,
-          billing_cycles: billingCyclesFor(plan, cycle),
-          payment_preferences: {
-            auto_bill_outstanding: true,
-            payment_failure_threshold: 2,
-          },
-        },
+        plan_id: ppPlanId,
         application_context: {
           brand_name: "CopyForge",
           shipping_preference: "NO_SHIPPING",
@@ -356,6 +386,7 @@ export const createPayPalSubscription = action({
       links?: Array<{ rel?: string; href?: string }>;
     };
     if (!res.ok || !data.id) {
+      console.error("PayPal Subscription Error:", JSON.stringify(data, null, 2));
       throw new ConvexError("Não foi possível criar a assinatura no PayPal.");
     }
     const approvalUrl = data.links?.find((link) => link.rel === "approve")?.href;

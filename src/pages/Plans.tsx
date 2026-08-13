@@ -44,20 +44,8 @@ export default function Plans() {
 
   const usage = useQuery(api.usage.getUsage);
 
-  // PayPal client id: prefer the build-time var; otherwise read the same
-  // value from the backend env (project keys). useQueries never throws, so
-  // a backend without this function simply degrades to the amber warning
-  // instead of crashing the page.
-  const clientIdResults = useQueries({
-    paypalClientId: { query: api.paypal.getPaypalClientId, args: {} },
-  });
-  // On the very first render the query result is still undefined; treat it
-  // as "not loaded yet" instead of crashing on `.status`.
-  const clientIdResult = clientIdResults.paypalClientId;
-  const paypalClientId =
-    PAYPAL_CLIENT_ID ??
-    (clientIdResult?.status === "success" ? clientIdResult.data : undefined) ??
-    undefined;
+  const backendClientId = useQuery(api.paypal.getPaypalClientId);
+  const paypalClientId = PAYPAL_CLIENT_ID ?? backendClientId ?? undefined;
   const createPayPalOrder = useAction(api.payments.createPayPalOrder);
   const capturePayPalOrder = useAction(api.payments.capturePayPalOrder);
   const createPayPalSubscription = useAction(api.payments.createPayPalSubscription);
@@ -119,7 +107,7 @@ export default function Plans() {
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     // Open the popup synchronously so the browser doesn't block it.
-    const win = window.open("about:blank", "_blank", "noopener,noreferrer");
+    const win = window.open("about:blank", "_blank");
     setSubscribing(plan.id);
     try {
       const { approvalUrl } = await createPayPalSubscription({
