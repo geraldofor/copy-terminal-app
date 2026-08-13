@@ -28,9 +28,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-/** Client ID for the PayPal JS SDK (public — safe to ship). Comes from
- *  VITE_PAYPAL_CLIENT_ID at build time — set it in the project's Keys / API
- *  keys UI and in your host's build env (e.g. Netlify environment vars). */
+/** Client ID for the PayPal JS SDK (public — safe to ship). The backend is
+ *  the source of truth (reads PAYPAL_CLIENT_ID from the Convex env vars), so
+ *  switching sandbox ↔ live only requires changing the keys in Convex — no
+ *  rebuild needed. The build-time VITE_PAYPAL_CLIENT_ID is only a fallback. */
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as
   | string
   | undefined;
@@ -45,7 +46,8 @@ export default function Plans() {
   const usage = useQuery(api.usage.getUsage);
 
   const backendClientId = useQuery(api.paypal.getPaypalClientId);
-  const paypalClientId = PAYPAL_CLIENT_ID ?? backendClientId ?? undefined;
+  // Backend first: keeps sandbox/live in sync with the Convex env vars.
+  const paypalClientId = backendClientId ?? PAYPAL_CLIENT_ID ?? undefined;
   const createPayPalOrder = useAction(api.payments.createPayPalOrder);
   const capturePayPalOrder = useAction(api.payments.capturePayPalOrder);
   const createPayPalSubscription = useAction(api.payments.createPayPalSubscription);
