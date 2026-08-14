@@ -71,8 +71,12 @@ export default function Plans() {
   const usage = useQuery(api.usage.getUsage);
 
   const backendClientId = useQuery(api.paypal.getPaypalClientId);
+  const paymentMethods = useQuery(api.paypal.getPaymentMethods);
   // Backend first: keeps sandbox/live in sync with the Convex env vars.
   const paypalClientId = backendClientId ?? PAYPAL_CLIENT_ID ?? undefined;
+  // PayPal is only offered to customers when it is configured LIVE. Sandbox
+  // buttons would redirect real customers to the PayPal sandbox — a dead end.
+  const paypalEnabled = !!paymentMethods?.paypalLive && !!paypalClientId;
   const createPayPalOrder = useAction(api.payments.createPayPalOrder);
   const capturePayPalOrder = useAction(api.payments.capturePayPalOrder);
   const createPayPalSubscription = useAction(api.payments.createPayPalSubscription);
@@ -83,6 +87,11 @@ export default function Plans() {
   const myOrders = useQuery(api.manualPayments.getMyOrders);
   const createManualOrder = useMutation(api.manualPayments.createManualOrder);
   const cancelMyOrder = useMutation(api.manualPayments.cancelMyOrder);
+  // Manual (Mercado Pago etc.) is considered configured when the admin has
+  // set instructions or a payment link.
+  const manualConfigured =
+    manualInfo !== undefined &&
+    (!!manualInfo.instructions || !!manualInfo.paymentUrl);
 
   const [billing, setBilling] = useState<BillingCycle>("monthly");
   const [busyTopUp, setBusyTopUp] = useState<string | null>(null);
@@ -387,18 +396,32 @@ export default function Plans() {
                   <Loader2 className="size-3.5 animate-spin" />
                   {t("plan.buying")}
                 </div>
-              ) : (
+              ) : paypalEnabled ? (
                 <Button
                   size="sm"
                   className="mt-4 w-full font-mono text-[11px]"
-                  disabled={subscribing !== null || !paypalClientId}
+                  disabled={subscribing !== null}
                   onClick={() => handleSubscribe(plan)}
                 >
                   <CreditCard className="size-3.5" />
                   {t("plan.subscribe")}
                 </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  className="mt-4 w-full font-mono text-[11px]"
+                  disabled={manualBusy !== null}
+                  onClick={() => handleManualBuy("subscription", plan.id, "USD")}
+                >
+                  {manualBusy === plan.id ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <HandCoins className="size-3.5" />
+                  )}
+                  {t("manual.subscribeShort")}
+                </Button>
               )}
-              {!free && (
+              {!free && paypalEnabled && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -478,7 +501,7 @@ export default function Plans() {
                     <Loader2 className="size-4 animate-spin" />
                     {t("plan.buying")}
                   </div>
-                ) : paypalClientId ? (
+                ) : paypalEnabled ? (
                   <PayPalButtons
                     style={{ layout: "horizontal", color: "gold", shape: "rect", label: "paypal", tagline: false }}
                     disabled={busyTopUp !== null}
@@ -497,7 +520,7 @@ export default function Plans() {
                 ) : null}
                 <Button
                   size="sm"
-                  variant={paypalClientId ? "outline" : "default"}
+                  variant={paypalEnabled ? "outline" : "default"}
                   className="w-full font-mono text-[11px]"
                   disabled={manualBusy !== null || busyTopUp !== null}
                   onClick={() => handleManualBuy("pack", pack.id, currency)}
@@ -543,8 +566,8 @@ export default function Plans() {
           </div>
         </header>
 
-        {/* Not-configured warning */}
-        {!paypalClientId && (
+        {/* Not-configured warning (only when no payment method works at all) */}
+        {manualInfo !== undefined && !paypalEnabled && !manualConfigured && (
           <div className="mt-8 rounded-md border border-term-amber/40 bg-term-amber/10 p-4">
             <p className="flex items-center gap-2 font-mono text-sm font-semibold text-term-amber">
               <Zap className="size-4" />
@@ -556,14 +579,14 @@ export default function Plans() {
           </div>
         )}
 
-        {/* Subscriptions (approval happens on PayPal, no SDK needed) */}
+        {/* Subscriptions (PayPal approval only when live) */}
         {subscriptionsSection}
 
-        {/* Top-ups (PayPal SDK loads only when configured) */}
-        {paypalClientId ? (
+        {/* Top-ups (PayPal SDK loads only when configured live) */}
+        {paypalEnabled ? (
           <PayPalScriptProvider
             options={{
-              clientId: paypalClientId,
+              clientId: paypalClientId!,
               currency,
               intent: "capture",
               components: "buttons",

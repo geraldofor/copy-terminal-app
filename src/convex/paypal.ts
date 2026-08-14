@@ -20,3 +20,16 @@ export const getPaypalClientId = query({
     );
   },
 });
+
+/**
+ * Whether PayPal is enabled for real customers. PayPal is only shown on the
+ * plans page when it is configured in LIVE mode — otherwise the buttons would
+ * send customers to the PayPal sandbox, where they cannot actually pay.
+ * Flip PAYPAL_ENV to "live" (with live keys) and the buttons reappear
+ * automatically, with no code changes.
+ */
+export const getPaymentMethods = query({
+  handler: (): { paypalLive: boolean } => {
+    return { paypalLive: process.env.PAYPAL_ENV === "live" };
+  },
+});
