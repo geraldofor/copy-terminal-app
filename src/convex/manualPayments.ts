@@ -77,7 +77,7 @@ async function requireAdmin(ctx: MutationCtx | QueryCtx) {
 /* Payment instructions (admin-editable, shown on the order screen)    */
 /* ------------------------------------------------------------------ */
 
-/** Current payment instructions (settings doc wins, env var as fallback). */
+/** Current payment info (settings doc wins, env var as fallback). */
 export const getManualPaymentInfo = query({
   args: {},
   handler: async (ctx) => {
@@ -85,29 +85,37 @@ export const getManualPaymentInfo = query({
       .query("settings")
       .withIndex("by_key", (q) => q.eq("key", SETTINGS_KEY))
       .first();
-    const saved = doc?.value?.instructions as string | undefined;
+    const value = doc?.value as
+      | { instructions?: string; paymentUrl?: string }
+      | undefined;
     return {
-      instructions: saved ?? process.env.MANUAL_PAYMENT_INSTRUCTIONS ?? "",
+      instructions:
+        value?.instructions ??
+        process.env.MANUAL_PAYMENT_INSTRUCTIONS ??
+        "",
+      paymentUrl:
+        value?.paymentUrl ?? process.env.MANUAL_PAYMENT_URL ?? "",
     };
   },
 });
 
-/** Save the payment instructions shown to customers. Admin only. */
+/** Save the payment instructions + payment link shown to customers. Admin only. */
 export const saveManualPaymentInfo = mutation({
-  args: { instructions: v.string() },
-  handler: async (ctx, { instructions }) => {
+  args: {
+    instructions: v.string(),
+    paymentUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, { instructions, paymentUrl }) => {
     await requireAdmin(ctx);
     const doc = await ctx.db
       .query("settings")
       .withIndex("by_key", (q) => q.eq("key", SETTINGS_KEY))
       .first();
+    const value = { instructions, paymentUrl: paymentUrl ?? "" };
     if (doc) {
-      await ctx.db.patch(doc._id, { value: { instructions } });
+      await ctx.db.patch(doc._id, { value });
     } else {
-      await ctx.db.insert("settings", {
-        key: SETTINGS_KEY,
-        value: { instructions },
-      });
+      await ctx.db.insert("settings", { key: SETTINGS_KEY, value });
     }
     return { ok: true };
   },

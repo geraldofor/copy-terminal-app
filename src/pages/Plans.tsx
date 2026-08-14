@@ -685,6 +685,20 @@ export default function Plans() {
               </div>
             </div>
 
+            {/* Pay now (payment link, e.g. Mercado Pago) */}
+            {liveOrder?.status === "pending" && manualInfo?.paymentUrl && (
+              <Button
+                size="lg"
+                className="w-full font-mono text-sm"
+                onClick={() =>
+                  window.open(manualInfo.paymentUrl, "_blank", "noopener")
+                }
+              >
+                <CreditCard className="size-4" />
+                {t("manual.payNow")}
+              </Button>
+            )}
+
             {/* Instructions */}
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">

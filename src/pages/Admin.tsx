@@ -114,16 +114,18 @@ export default function Admin() {
   const [deltas, setDeltas] = useState<Record<string, string>>({});
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [instructions, setInstructions] = useState("");
+  const [paymentUrl, setPaymentUrl] = useState("");
   const [syncedInstructions, setSyncedInstructions] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<ManualOrder | null>(null);
   const [cancelTarget, setCancelTarget] = useState<ManualOrder | null>(null);
 
-  // Load the saved payment instructions once the query resolves.
+  // Load the saved payment info once the query resolves.
   useEffect(() => {
     if (manualInfo !== undefined && !syncedInstructions) {
       setSyncedInstructions(true);
       setInstructions(manualInfo.instructions);
+      setPaymentUrl(manualInfo.paymentUrl ?? "");
     }
   }, [manualInfo, syncedInstructions]);
 
@@ -180,7 +182,7 @@ export default function Admin() {
   const handleSaveConfig = async () => {
     setSavingConfig(true);
     try {
-      await saveManualPaymentInfo({ instructions });
+      await saveManualPaymentInfo({ instructions, paymentUrl });
       toast.success(t("manual.configSaved"));
     } catch (error) {
       toast.error(error instanceof ConvexError ? error.message : t("manual.err"));
@@ -443,8 +445,19 @@ export default function Admin() {
                 onChange={(e) => setInstructions(e.target.value)}
                 rows={4}
                 className="mt-3 font-mono text-xs leading-5"
-                placeholder={"PIX: ...\nPayPal.me: ...\nBanco: ..."}
+                placeholder={"PIX: ...\nMercado Pago: ...\nPayPal.me: ...\nBanco: ..."}
               />
+              <label className="mt-3 block">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  {t("manual.paymentUrlLabel")}
+                </span>
+                <Input
+                  value={paymentUrl}
+                  onChange={(e) => setPaymentUrl(e.target.value)}
+                  className="mt-1.5 font-mono text-xs"
+                  placeholder="https://link.mercadopago.com.br/..."
+                />
+              </label>
               <div className="mt-3 flex justify-end">
                 <Button
                   size="sm"

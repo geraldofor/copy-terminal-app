@@ -320,6 +320,7 @@ vendem — em segundos, não em horas.
   "manual.copyRef": "copiar código",
   "manual.copiedRef": "Código copiado!",
   "manual.close": "fechar",
+  "manual.payNow": "Pagar agora",
   "manual.instructionsLabel": "// como pagar",
   "manual.instructionsEmpty":
     "As instruções de pagamento ainda não foram configuradas. Faça a transferência do valor acima e envie o código do pedido para confirmarmos — os créditos entram assim que o pagamento for confirmado.",
@@ -357,7 +358,8 @@ vendem — em segundos, não em horas.
   "manual.noOrders": "nenhum pedido encontrado",
   "manual.configTitle": "// instruções de pagamento",
   "manual.configDesc":
-    "Exibidas para o cliente na tela de pagamento manual — chave PIX, PayPal.me, dados bancários, etc.",
+    "Exibidas para o cliente na tela de pagamento manual — link de pagamento (Mercado Pago etc.) + chave PIX, PayPal.me, dados bancários.",
+  "manual.paymentUrlLabel": "link de pagamento (abre o botão \"Pagar agora\")",
   "manual.configSave": "salvar instruções",
   "manual.configSaved": "Instruções salvas",
   "manual.err": "Ação não autorizada",
@@ -671,6 +673,7 @@ sell — in seconds, not hours.
   "manual.copyRef": "copy code",
   "manual.copiedRef": "Code copied!",
   "manual.close": "close",
+  "manual.payNow": "Pay now",
   "manual.instructionsLabel": "// how to pay",
   "manual.instructionsEmpty":
     "Payment instructions are not configured yet. Transfer the amount above and send us the order code to confirm — credits are released as soon as the payment is confirmed.",
@@ -708,7 +711,8 @@ sell — in seconds, not hours.
   "manual.noOrders": "no orders found",
   "manual.configTitle": "// payment instructions",
   "manual.configDesc":
-    "Shown to the customer on the manual payment screen — PIX key, PayPal.me, bank details, etc.",
+    "Shown to the customer on the manual payment screen — payment link (Mercado Pago etc.) + PIX key, PayPal.me, bank details.",
+  "manual.paymentUrlLabel": "payment link (powers the \"Pay now\" button)",
   "manual.configSave": "save instructions",
   "manual.configSaved": "Instructions saved",
   "manual.err": "Action not authorized",
@@ -1020,6 +1024,7 @@ vendan — en segundos, no en horas.
   "manual.copyRef": "copiar código",
   "manual.copiedRef": "¡Código copiado!",
   "manual.close": "cerrar",
+  "manual.payNow": "Pagar ahora",
   "manual.instructionsLabel": "// cómo pagar",
   "manual.instructionsEmpty":
     "Las instrucciones de pago aún no están configuradas. Transfiere el importe de arriba y envíanos el código del pedido para confirmar — los créditos se liberan en cuanto se confirme el pago.",
@@ -1057,7 +1062,8 @@ vendan — en segundos, no en horas.
   "manual.noOrders": "no se encontraron pedidos",
   "manual.configTitle": "// instrucciones de pago",
   "manual.configDesc":
-    "Se muestran al cliente en la pantalla de pago manual — clave PIX, PayPal.me, datos bancarios, etc.",
+    "Se muestran al cliente en la pantalla de pago manual — enlace de pago (Mercado Pago, etc.) + clave PIX, PayPal.me, datos bancarios.",
+  "manual.paymentUrlLabel": "enlace de pago (activa el botón \"Pagar ahora\")",
   "manual.configSave": "guardar instrucciones",
   "manual.configSaved": "Instrucciones guardadas",
   "manual.err": "Acción no autorizada",
