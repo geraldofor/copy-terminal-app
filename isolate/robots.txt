@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Private / app routes — keep the index clean (login, dashboard, plans, admin).
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /plans
+Disallow: /admin
+
+Sitemap: https://copy-terminal.netlify.app/sitemap.xml
