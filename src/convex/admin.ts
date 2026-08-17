@@ -4,6 +4,17 @@ import { mutation, query, QueryCtx } from "./_generated/server";
 import { ROLES, roleValidator, type Role } from "./schema";
 import { DEFAULT_CREDITS } from "./usage";
 
+type ActivityEvent = {
+  type: "signup" | "order" | "copy";
+  ts: number;
+  email: string | null;
+  reference: string | null;
+  itemName: string | null;
+  status: string | null;
+  template: string | null;
+  title: string | null;
+};
+
 /** Returns the signed-in user, or null when not an admin. Never throws. */
 async function getAdminUser(ctx: QueryCtx) {
   const userId = await getAuthUserId(ctx);
@@ -76,10 +87,15 @@ export const adminStats = query({
     let creditsIssued = 0;
     let creditsRemaining = 0;
     let generatedTotal = 0;
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    let newUsers7d = 0;
     for (const user of users) {
       creditsIssued += user.creditsTotal ?? DEFAULT_CREDITS;
       creditsRemaining += user.credits ?? DEFAULT_CREDITS;
       generatedTotal += user.generatedTotal ?? 0;
+      if (user._creationTime >= weekAgo) {
+        newUsers7d += 1;
+      }
     }
 
     return {
@@ -88,6 +104,7 @@ export const adminStats = query({
       creditsIssued,
       creditsRemaining,
       generatedTotal,
+      newUsers7d,
     };
   },
 });
@@ -122,8 +139,129 @@ export const listUsers = query({
         creditsTotal: user.creditsTotal ?? DEFAULT_CREDITS,
         generatedTotal: user.generatedTotal ?? 0,
         savedCount: savedCount.get(user._id) ?? 0,
+        signupSource: user.signupSource ?? null,
+        signupReferrer: user.signupReferrer ?? null,
       }))
       .sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+/**
+ * Store where the current user came from (referrer / UTM source). Called
+ * once from the client after sign-in; keeps the first recorded source.
+ */
+export const recordSignupSource = mutation({
+  args: {
+    source: v.optional(v.string()),
+    referrer: v.optional(v.string()),
+  },
+  handler: async (ctx, { source, referrer }) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      return { ok: false };
+    }
+    const user = await ctx.db.get(userId);
+    if (user === null) {
+      return { ok: false };
+    }
+    if (!user.signupSource && source) {
+      await ctx.db.patch(userId, {
+        signupSource: source.slice(0, 120),
+        signupReferrer: referrer ? referrer.slice(0, 500) : undefined,
+      });
+    }
+    return { ok: true };
+  },
+});
+
+/**
+ * Recent platform events (signups, manual orders, saved copies) merged
+ * into a single timeline, newest first. Returns null for non-admins.
+ */
+export const adminActivity = query({
+  args: {},
+  handler: async (ctx) => {
+    const admin = await getAdminUser(ctx);
+    if (admin === null) {
+      return null;
+    }
+    const users = await ctx.db.query("users").collect();
+    const orders = await ctx.db.query("manualOrders").collect();
+    const copies = await ctx.db.query("copies").collect();
+
+    const emailByUser = new Map(
+      users.map((u) => [u._id, u.email ?? u.name ?? null]),
+    );
+
+    const events: ActivityEvent[] = [];
+    for (const user of users) {
+      events.push({
+        type: "signup",
+        ts: user._creationTime,
+        email: user.email ?? user.name ?? null,
+        reference: null,
+        itemName: null,
+        status: null,
+        template: null,
+        title: null,
+      });
+    }
+    for (const order of orders) {
+      events.push({
+        type: "order",
+        ts: order.confirmedAt ?? order.cancelledAt ?? order._creationTime,
+        email: order.userEmail ?? emailByUser.get(order.userId) ?? null,
+        reference: order.reference,
+        itemName: order.itemName,
+        status: order.status,
+        template: null,
+        title: null,
+      });
+    }
+    for (const copy of copies) {
+      events.push({
+        type: "copy",
+        ts: copy.createdAt,
+        email: emailByUser.get(copy.userId) ?? null,
+        reference: null,
+        itemName: null,
+        status: null,
+        template: copy.template,
+        title: copy.title,
+      });
+    }
+
+    return events.sort((a, b) => b.ts - a.ts).slice(0, 20);
+  },
+});
+
+/**
+ * Recent saved copies across all users, with the owner's email.
+ * Returns null for non-admins.
+ */
+export const adminCopies = query({
+  args: {},
+  handler: async (ctx) => {
+    const admin = await getAdminUser(ctx);
+    if (admin === null) {
+      return null;
+    }
+    const copies = await ctx.db.query("copies").collect();
+    const users = await ctx.db.query("users").collect();
+    const emailByUser = new Map(
+      users.map((u) => [u._id, u.email ?? u.name ?? null]),
+    );
+    return copies
+      .map((copy) => ({
+        _id: copy._id,
+        createdAt: copy.createdAt,
+        template: copy.template,
+        title: copy.title,
+        content: copy.content,
+        email: emailByUser.get(copy.userId) ?? null,
+      }))
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 12);
   },
 });
 

@@ -5,10 +5,12 @@ import { LanguageSelect } from "@/components/LanguageSelect";
 import { useTypewriter } from "@/hooks/use-typewriter";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { captureTrafficSource } from "@/lib/traffic";
 import { SUBSCRIPTION_PLANS, annualPerMonth, formatUSD } from "@/convex/packs";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, TerminalSquare } from "lucide-react";
 import { BlinkCursor, TerminalWindow } from "@/components/copy/Terminal";
+import { useEffect } from "react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -65,6 +67,10 @@ export default function Landing() {
     { q: t("landing.faq4q"), a: t("landing.faq4a") },
     { q: t("landing.faq5q"), a: t("landing.faq5a") },
   ];
+
+  useEffect(() => {
+    captureTrafficSource();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

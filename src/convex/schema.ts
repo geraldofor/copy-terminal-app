@@ -36,6 +36,10 @@ const schema = defineSchema(
       credits: v.optional(v.number()), // remaining generation credits
       creditsTotal: v.optional(v.number()), // total credits on the current plan
       generatedTotal: v.optional(v.number()), // total copies generated (all time)
+
+      // marketing / traffic attribution (set once at signup)
+      signupSource: v.optional(v.string()), // utm_source or referrer host, e.g. "google", "instagram.com"
+      signupReferrer: v.optional(v.string()), // full referrer URL when available
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
     // copies saved to the user's history ("Meus Textos Salvos")

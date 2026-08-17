@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/i18n";
 import { LanguageSelect } from "@/components/LanguageSelect";
+import { captureTrafficSource } from "@/lib/traffic";
 import { TerminalSquare } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -41,6 +42,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    captureTrafficSource();
+  }, []);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {

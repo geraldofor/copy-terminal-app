@@ -6,10 +6,11 @@ import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { LogOut, Shield, TerminalSquare } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { getTrafficSource } from "@/lib/traffic";
 
 function StatCard({
   label,
@@ -45,6 +46,8 @@ export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { t, templates, getTemplate } = useI18n();
+  const recordSignupSource = useMutation(api.admin.recordSignupSource);
+  const reportedSource = useRef(false);
 
   const usage = useQuery(api.usage.getUsage);
   const copies = useQuery(api.copies.listCopies) ?? [];
@@ -53,6 +56,19 @@ export default function Dashboard() {
   const [view, setView] = useState<AppView>("gerador");
   const [selectedId, setSelectedId] = useState(templates[0].id);
   const template = getTemplate(selectedId);
+
+  // Report the visitor's origin to the admin panel once per session.
+  useEffect(() => {
+    if (reportedSource.current || !user) return;
+    reportedSource.current = true;
+    const traffic = getTrafficSource();
+    if (traffic.source) {
+      recordSignupSource({
+        source: traffic.source,
+        referrer: traffic.referrer ?? undefined,
+      });
+    }
+  }, [user, recordSignupSource]);
 
   const credits = usage?.credits ?? null;
   const creditsTotal = usage?.creditsTotal ?? null;

@@ -21,7 +21,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import {
+  Activity,
   CheckCircle2,
+  FileText,
   HandCoins,
   Loader2,
   Save,
@@ -48,6 +50,28 @@ type AdminUser = {
   creditsTotal: number;
   generatedTotal: number;
   savedCount: number;
+  signupSource: string | null;
+  signupReferrer: string | null;
+};
+
+type ActivityEvent = {
+  type: "signup" | "order" | "copy";
+  ts: number;
+  email: string | null;
+  reference: string | null;
+  itemName: string | null;
+  status: string | null;
+  template: string | null;
+  title: string | null;
+};
+
+type AdminCopy = {
+  _id: string;
+  createdAt: number;
+  template: string;
+  title: string;
+  content: string;
+  email: string | null;
 };
 
 type ManualOrder = {
@@ -94,6 +118,8 @@ export default function Admin() {
   const adminExists = useQuery(api.admin.adminExists);
   const stats = useQuery(api.admin.adminStats);
   const users = useQuery(api.admin.listUsers);
+  const activity = useQuery(api.admin.adminActivity);
+  const adminCopies = useQuery(api.admin.adminCopies);
 
   const claimAdmin = useMutation(api.admin.claimAdmin);
   const setRole = useMutation(api.admin.setRole);
@@ -198,7 +224,9 @@ export default function Admin() {
     const q = query.trim().toLowerCase();
     if (!q) return users;
     return users.filter((u) =>
-      [u.name, u.email, u._id].some((v) => v?.toLowerCase().includes(q)),
+      [u.name, u.email, u._id, u.signupSource].some((v) =>
+        v?.toLowerCase().includes(q),
+      ),
     );
   }, [users, query]);
 
@@ -248,6 +276,39 @@ export default function Admin() {
       toast.error(error instanceof ConvexError ? error.message : t("admin.err"));
     }
     setDeleteTarget(null);
+  };
+
+  const fmtDateTime = (ts: number) =>
+    new Date(ts).toLocaleString(dateLocale, {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const activityIcon = (type: ActivityEvent["type"]) =>
+    type === "signup" ? (
+      <UserPlus className="size-3.5 text-term-green" />
+    ) : type === "order" ? (
+      <HandCoins className="size-3.5 text-term-amber" />
+    ) : (
+      <FileText className="size-3.5 text-term-green" />
+    );
+
+  const activityText = (ev: ActivityEvent) => {
+    if (ev.type === "signup") {
+      return `${t("admin.evtSignup")} · ${ev.email ?? "—"}`;
+    }
+    if (ev.type === "order") {
+      const status =
+        ev.status === "confirmed"
+          ? t("manual.confirmed", { credits: "" })
+          : ev.status === "cancelled"
+            ? t("manual.cancelled")
+            : t("manual.pending");
+      return `${ev.reference ?? ""} · ${ev.itemName ?? ""} · ${status}`;
+    }
+    return `${t("admin.evtCopy")} · ${ev.template ?? ""} · ${ev.title ?? ""}`;
   };
 
   return (
@@ -328,11 +389,16 @@ export default function Admin() {
         {/* Admin panel */}
         {isAdmin && stats && (
           <>
-            <section className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <StatCard
                 label={t("admin.statUsers")}
                 value={stats.totalUsers}
                 hint={t("admin.statUsersHint")}
+              />
+              <StatCard
+                label={t("admin.statNew7")}
+                value={stats.newUsers7d}
+                hint={t("admin.statNew7Hint")}
               />
               <StatCard
                 label={t("admin.statCopies")}
@@ -349,6 +415,41 @@ export default function Admin() {
                 value={stats.generatedTotal}
                 hint={t("admin.statGeneratedHint")}
               />
+            </section>
+
+            {/* Recent activity */}
+            <section className="mt-8 rounded-md border bg-card p-4">
+              <h2 className="font-mono text-sm font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                <Activity className="mr-1.5 inline size-4 text-term-green" />
+                {t("admin.activity")}
+              </h2>
+              <p className="mt-1 font-mono text-[11px] leading-4 text-muted-foreground">
+                {t("admin.activityDesc")}
+              </p>
+              {!activity || activity.length === 0 ? (
+                <div className="mt-3 rounded border border-dashed px-4 py-8 text-center font-mono text-xs text-muted-foreground">
+                  {t("admin.activityEmpty")}
+                </div>
+              ) : (
+                <ul className="mt-3 divide-y">
+                  {activity.map((ev, i) => (
+                    <li
+                      key={`${ev.type}-${ev.ts}-${i}`}
+                      className="flex items-center justify-between gap-3 py-2"
+                    >
+                      <span className="flex min-w-0 items-center gap-2 font-mono text-xs">
+                        <span className="shrink-0">{activityIcon(ev.type)}</span>
+                        <span className="truncate text-foreground/90">
+                          {activityText(ev)}
+                        </span>
+                      </span>
+                      <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                        {fmtDateTime(ev.ts)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
 
             {/* Manual payment orders */}
@@ -425,6 +526,52 @@ export default function Admin() {
                           </>
                         )}
                       </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
+            {/* Saved copies across users */}
+            <section className="mt-8">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-mono text-sm font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  <FileText className="mr-1.5 inline size-4 text-term-green" />
+                  {t("admin.copiesTitle")}
+                  <span className="ml-2 text-term-dim">
+                    ({adminCopies?.length ?? 0})
+                  </span>
+                </h2>
+                <p className="font-mono text-[11px] text-muted-foreground">
+                  {t("admin.copiesDesc")}
+                </p>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-md border">
+                {!adminCopies || adminCopies.length === 0 ? (
+                  <div className="bg-card px-4 py-10 text-center font-mono text-xs text-muted-foreground">
+                    {t("admin.copiesEmpty")}
+                  </div>
+                ) : (
+                  adminCopies.map((copy) => (
+                    <div
+                      key={copy._id}
+                      className="border-b bg-card px-4 py-3 last:border-b-0"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="min-w-0 truncate font-mono text-xs font-semibold">
+                          {copy.title}
+                        </p>
+                        <p className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                          {copy.email ?? "—"} · {fmtDateTime(copy.createdAt)}
+                        </p>
+                      </div>
+                      <p className="mt-1 font-mono text-[10px] text-term-green-deep">
+                        $ {copy.template}
+                      </p>
+                      <p className="mt-1.5 line-clamp-2 whitespace-pre-wrap font-mono text-[11px] leading-5 text-muted-foreground">
+                        {copy.content}
+                      </p>
                     </div>
                   ))
                 )}
@@ -525,6 +672,11 @@ export default function Admin() {
                         {u.isAnonymous && (
                           <span className="ml-1 text-term-amber">
                             ({t("admin.anon")})
+                          </span>
+                        )}
+                        {u.signupSource && (
+                          <span className="ml-1 text-term-green-deep">
+                            · {t("admin.origin")}: {u.signupSource}
                           </span>
                         )}
                       </p>
