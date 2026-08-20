@@ -116,6 +116,36 @@ export function CopyOutput({
         </div>
       ) : (
         <>
+          {/* ── Engine diagnostics banner ── */}
+          <div className="border-b bg-muted/40 px-4 py-2 font-mono text-[11px]">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="flex items-center gap-1.5">
+                <span className="text-term-dim">ENGINE:</span>
+                {engine && !isFallback ? (
+                  <>
+                    <span className="size-1.5 animate-pulse rounded-full bg-term-green" />
+                    <span className="font-bold text-term-green">{engine.toUpperCase()}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className={`size-1.5 rounded-full ${engineError ? "bg-red-400" : "bg-term-amber"}`} />
+                    <span className={`font-bold ${engineError ? "text-red-400" : "text-term-amber"}`}>
+                      LOCAL FALLBACK{engineError ? ` — ${engineError.toUpperCase()}` : ""}
+                    </span>
+                  </>
+                )}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-term-dim">KNOWLEDGE BASE:</span>
+                {engine && !isFallback ? (
+                  <span className="font-bold text-term-green">ACTIVE</span>
+                ) : (
+                  <span className="font-bold text-term-amber">NOT USED</span>
+                )}
+              </span>
+            </div>
+          </div>
+
           <div className="max-h-[440px] min-h-[200px] overflow-auto p-4 font-mono text-[13px] leading-6">
             {lines.length === 0 && !isTyping ? (
               <p className="text-muted-foreground">
@@ -172,40 +202,6 @@ export function CopyOutput({
 
             {/* Rewrite mode selector */}
             <div className="ml-auto flex items-center gap-2">
-              {/* Engine diagnostics: shows Gemini model, local fallback, or error */}
-              <span
-                className={`flex min-w-0 items-center gap-1.5 font-mono text-[10px] ${
-                  engine && !isFallback
-                    ? "text-term-green"
-                    : isFallback && engineError
-                      ? "text-red-400"
-                      : "text-term-amber"
-                }`}
-                title={
-                  engine && !isFallback
-                    ? `${engine} • KB active`
-                    : engineError
-                      ? `Gemini: ${engineError} • using local fallback`
-                      : "Local fallback engine"
-                }
-              >
-                <span
-                  className={`size-1.5 shrink-0 rounded-full ${
-                    engine && !isFallback
-                      ? "animate-pulse bg-term-green"
-                      : isFallback && engineError
-                        ? "bg-red-400"
-                        : "bg-term-amber"
-                  }`}
-                />
-                <span className="truncate">
-                  {engine && !isFallback
-                    ? engine
-                    : engineError
-                      ? `local · ${engineError}`
-                      : "local"}
-                </span>
-              </span>
               <Select
                 onValueChange={(mode) => onRewrite(mode)}
                 disabled={busy || isTyping}
