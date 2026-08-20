@@ -1,18 +1,45 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { parseCopyText } from "@/lib/copy-format";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import {
   Check,
   Copy,
+  Flame,
   Loader2,
   Pencil,
   RefreshCw,
   Save,
+  Sparkles,
   X,
 } from "lucide-react";
 import { BlinkCursor, TerminalWindow } from "./Terminal";
+
+export const REWRITE_MODES = [
+  { value: "", label: "regenerate", icon: RefreshCw },
+  { value: "persuasive", label: "persuasive", icon: Flame },
+  { value: "emotional", label: "emotional", icon: Sparkles },
+  { value: "direct", label: "direct", icon: null },
+  { value: "premium", label: "premium", icon: null },
+  { value: "urgent", label: "urgent", icon: null },
+  { value: "shorter", label: "shorter", icon: null },
+  { value: "conversational", label: "conversational", icon: null },
+  { value: "aggressive", label: "aggressive", icon: null },
+  { value: "instagram", label: "for Instagram", icon: null },
+  { value: "meta-ads", label: "for Meta Ads", icon: null },
+  { value: "google-ads", label: "for Google Ads", icon: null },
+  { value: "3-variations", label: "3 variations", icon: null },
+] as const;
+
+export type RewriteMode = (typeof REWRITE_MODES)[number]["value"];
 
 export interface CopyOutputProps {
   /** Full generated text. */
@@ -27,7 +54,7 @@ export interface CopyOutputProps {
   /** Toggle edit mode. */
   onEdit: () => void;
   /** Regenerate with the same briefing. */
-  onRewrite: () => void;
+  onRewrite: (mode?: string) => void;
   /** AI model that generated the text (undefined when local fallback). */
   engine?: string;
   editing: boolean;
@@ -136,6 +163,8 @@ export function CopyOutput({
               <Pencil className="size-4" />
               {t("out.edit")}
             </Button>
+
+            {/* Rewrite mode selector */}
             <div className="ml-auto flex items-center gap-2">
               {engine && (
                 <span
@@ -146,19 +175,25 @@ export function CopyOutput({
                   <span className="truncate">{engine}</span>
                 </span>
               )}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onRewrite}
-                disabled={busy}
+              <Select
+                onValueChange={(mode) => onRewrite(mode)}
+                disabled={busy || isTyping}
               >
-                {busy ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="size-4" />
-                )}
-                {t("out.rewrite")}
-              </Button>
+                <SelectTrigger className="h-8 w-auto min-w-[100px] border-dashed font-mono text-[11px]">
+                  <RefreshCw className="size-3" />
+                  <SelectValue placeholder={t("out.rewrite")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {REWRITE_MODES.map((mode) => (
+                    <SelectItem key={mode.value} value={mode.value} className="font-mono text-[11px]">
+                      <span className="flex items-center gap-1.5">
+                        {mode.icon && <mode.icon className="size-3" />}
+                        {t(`out.rewrite.${mode.label || "regenerate"}` as any) || mode.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </>

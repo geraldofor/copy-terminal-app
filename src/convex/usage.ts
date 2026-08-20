@@ -31,12 +31,16 @@ export const getUsage = query({
 });
 
 /**
- * Debit generation credits. New accounts implicitly start with DEFAULT_CREDITS.
- * Throws when the balance is already at zero.
+ * Debit exactly 1 generation credit.
+ *
+ * SECURITY: The `amount` parameter is accepted for backward compatibility
+ * but is IGNORED — the mutation always deducts exactly 1 credit. This
+ * prevents client-side abuse where a malicious caller could pass negative
+ * values or zero to skip payment.
  */
 export const consumeCredits = mutation({
   args: { amount: v.optional(v.number()) },
-  handler: async (ctx, { amount = 1 }) => {
+  handler: async (ctx, { amount: _amount }) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) {
       throw new ConvexError("Sessão expirada. Entre novamente para continuar.");
@@ -54,11 +58,12 @@ export const consumeCredits = mutation({
         "Créditos esgotados. Recarregue seu plano para continuar gerando.",
       );
     }
-    const next = Math.max(0, current - amount);
+    // Always consume exactly 1 — ignore any client-supplied amount
+    const next = Math.max(0, current - 1);
     await ctx.db.patch(userId, {
       credits: next,
       creditsTotal: user.creditsTotal ?? DEFAULT_CREDITS,
-      generatedTotal: (user.generatedTotal ?? 0) + amount,
+      generatedTotal: (user.generatedTotal ?? 0) + 1,
     });
     return { credits: next };
   },
@@ -114,7 +119,9 @@ export const grantSubscriptionCycle = internalMutation({
 });
 
 /**
- * Demo helper: top up credits so the product can be explored freely.
+ * Grant credits — admin only. Previously this was a public mutation that
+ * allowed any logged-in user to add free credits to themselves. Now only
+ * admins can use it. Amount is clamped (1–500, integer).
  */
 export const addCredits = mutation({
   args: { amount: v.optional(v.number()) },
@@ -123,16 +130,18 @@ export const addCredits = mutation({
     if (userId === null) {
       throw new ConvexError("Sessão expirada. Entre novamente para continuar.");
     }
-    const user = await ctx.db.get(userId);
-    if (user === null) {
-      throw new ConvexError("Usuário não encontrado.");
+    const caller = await ctx.db.get(userId);
+    if (caller === null || caller.role !== "admin") {
+      throw new ConvexError("Acesso restrito a administradores.");
     }
-    const current = user.credits ?? DEFAULT_CREDITS;
-    const total = Math.max(user.creditsTotal ?? DEFAULT_CREDITS, current + amount);
+    // Clamp amount to prevent abuse
+    const safe = Math.max(1, Math.min(500, Math.floor(amount)));
+    const current = caller.credits ?? DEFAULT_CREDITS;
+    const total = Math.max(caller.creditsTotal ?? DEFAULT_CREDITS, current + safe);
     await ctx.db.patch(userId, {
-      credits: current + amount,
+      credits: current + safe,
       creditsTotal: total,
     });
-    return { credits: current + amount };
+    return { credits: current + safe };
   },
 });

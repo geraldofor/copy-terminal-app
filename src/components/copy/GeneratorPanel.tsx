@@ -95,7 +95,7 @@ export function GeneratorPanel({
   const setValue = (key: string, value: string) =>
     setValues((prev) => ({ ...prev, [key]: value }));
 
-  const generate = async (vals: Record<string, string>) => {
+  const generate = async (vals: Record<string, string>, rewriteMode?: string) => {
     if (phase === "processing" || phase === "typing") return;
 
     for (const field of template.fields) {
@@ -156,6 +156,7 @@ export function GeneratorPanel({
         template: template.id,
         values: vals,
         locale,
+        ...(rewriteMode ? { rewriteMode } : {}),
       });
       if (ai.ok && ai.text?.trim()) {
         output = ai.text;
@@ -361,7 +362,7 @@ export function GeneratorPanel({
           onCopy={handleCopy}
           onSave={handleSave}
           onEdit={openEdit}
-          onRewrite={() => generate(lastValues)}
+          onRewrite={(mode) => generate(lastValues, mode)}
           engine={engine}
           editing={editing}
           editText={editText}
