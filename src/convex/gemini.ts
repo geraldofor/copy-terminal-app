@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { getKnowledgeForPrompt } from "../lib/copy-knowledge-base";
 
 /**
  * CopyForge Strategic AI Copy Engine
@@ -162,6 +163,13 @@ function buildPrompt(
     "Additional context:",
     briefEntries || "- (no additional details provided)",
 
+    // Strategic knowledge layer (from CopyForge Knowledge Base)
+    "",
+    "═══ STRATEGIC INTELLIGENCE ═══",
+    "Use the following strategic guidance to interpret the brief, NOT as phrases to copy verbatim.",
+    "These rules override any default behavior:",
+    getKnowledgeForPrompt(),
+
     // Strategy phase (internal thinking)
     "",
     "═══ YOUR PROCESS (DO THIS INTERNALLY — DO NOT OUTPUT THIS SECTION) ═══",
@@ -173,9 +181,12 @@ function buildPrompt(
     "5. VALUE PROPOSITION: What is the single most compelling reason to choose this product?",
     "6. DIFFERENTIATORS: What makes this product different from alternatives?",
     "7. OBJECTIONS: What might stop someone from buying? Address the strongest objection.",
-    "8. PROOF/CREIBILITY: What evidence supports the claims? (Use only information provided — never invent certifications, testimonials, or statistics.)",
+    "8. PROOF/CREDIBILITY: What evidence supports the claims? (Use only information provided — never invent certifications, testimonials, or statistics.)",
     "9. OFFER: What is the deal? (Use only pricing/discounts provided — never fabricate offers.)",
     "10. ANGLE: Based on all the above, what is the strongest angle for this copy?",
+    "11. OBJECTIVE INTERPRETATION: The campaign goal (e.g. 'convert interest into sales') is the ADVERTISER's objective, NOT the customer's desire. Translate it into a persuasion strategy — do NOT put it in the customer's mouth.",
+    "12. FEATURE-TO-BENEFIT: Transform confirmed features into plausible benefits ONLY when supported by the briefing. Never generate promises of results that were not informed.",
+    "13. AUDIENCE INTERPRETATION: Use the target audience description to identify possible motivations, pains and objections. Do NOT present audience inferences as stated facts.",
 
     // Copywriting rules
     "",
@@ -190,6 +201,28 @@ function buildPrompt(
     "- Make the reader feel understood, not sold to.",
     "- Every paragraph must earn its place. No filler.",
     "- The CTA should feel like a natural next step, not a pushy demand.",
+    "",
+    "═══ MANDATORY RULES (VIOLATIONS = REJECTED COPY) ═══",
+    "1. The campaign objective belongs to the ADVERTISER. Never present it as the customer's desire.",
+    "   Example: Objective='convert interest into sales' → Do NOT write 'Professionals who want to convert interest into sales.'",
+    "   Correct: Identify what the audience actually wants, then connect it to the product.",
+    "2. Never copy-paste briefing fields literally into the copy. INTERPRET: product → audience → problem → desire → benefit → argument → CTA.",
+    "3. NEVER invent: testimonials, statistics, results, certifications, discounts, bonuses, guarantees, prices, scarcity, deadlines, or financial outcomes not in the briefing.",
+    "4. Distinguish: FEATURE ≠ BENEFIT ≠ DESIRE ≠ PROMISE. A feature may generate a plausible benefit, but never a promise of unverified results.",
+    "5. Use the audience to UNDERSTAND possible pains, desires and objections — do not present inferences as stated facts.",
+    "6. Select copy angles based on: product + audience + objective + channel + benefit + pain + desire + objection.",
+    "7. The CTA must match the available offer. If no specific offer exists, do not invent one.",
+    "",
+    "═══ QUALITY CHECK (DO THIS INTERNALLY BEFORE RETURNING) ═══",
+    "Before finalizing, verify:",
+    "- Did the campaign objective appear as a customer desire? → If YES, rewrite.",
+    "- Was the audience simply copied into the ad? → If YES, rewrite.",
+    "- Are there unsupported promises? → If YES, remove them.",
+    "- Was any proof invented? → If YES, remove it.",
+    "- Was any offer invented? → If YES, remove it.",
+    "- Do the headlines have genuinely different angles? → If NO, differentiate.",
+    "- Is the CTA coherent with the actual offer? → If NO, fix it.",
+    "Fix all issues before returning the copy. Do NOT expose this quality check to the user.",
 
     // Output format
     "",
