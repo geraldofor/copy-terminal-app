@@ -60,9 +60,10 @@ export function GeneratorPanel({
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState("");
   const [busy, setBusy] = useState(false);
-  const [lastValues, setLastValues] = useState<Record<string, string>>({});
-  const [engine, setEngine] = useState<string | undefined>();
-  const timeouts = useRef<number[]>([]);
+  const [lastValues, setLastValues] = useState<Record<string, string>>({});    const [engine, setEngine] = useState<string | undefined>();
+    const [isFallback, setIsFallback] = useState(false);
+    const [engineError, setEngineError] = useState<string | undefined>();
+    const timeouts = useRef<number[]>([]);
 
   const credits = usage?.credits ?? 0;
   const outOfCredits = usage !== undefined && usage !== null && usage.credits <= 0;
@@ -120,6 +121,8 @@ export function GeneratorPanel({
     setEditing(false);
     setLastValues(vals);
     setEngine(undefined);
+    setIsFallback(false);
+    setEngineError(undefined);
 
     try {
       await consumeCredits({ amount: 1 });
@@ -151,6 +154,8 @@ export function GeneratorPanel({
        engine automatically when the key is missing or the API fails. */
     let output = template.generate(vals, locale);
     let usedEngine: string | undefined;
+    let fallback = true;
+    let errorReason: string | undefined;
     try {
       const ai = await generateWithGemini({
         template: template.id,
@@ -161,12 +166,17 @@ export function GeneratorPanel({
       if (ai.ok && ai.text?.trim()) {
         output = ai.text;
         usedEngine = ai.model;
+        fallback = false;
+      } else if (!ai.ok && "error" in ai) {
+        errorReason = ai.error;
       }
-    } catch {
-      // Server-side action failed — keep the local fallback output.
+    } catch (err) {
+      errorReason = err instanceof Error ? err.message : "action-failed";
     }
     setResult(output);
     setEngine(usedEngine);
+    setIsFallback(fallback);
+    setEngineError(errorReason);
     setPhase("typing");
   };
 
@@ -364,6 +374,8 @@ export function GeneratorPanel({
           onEdit={openEdit}
           onRewrite={(mode) => generate(lastValues, mode)}
           engine={engine}
+          isFallback={isFallback}
+          engineError={engineError}
           editing={editing}
           editText={editText}
           setEditText={setEditText}

@@ -305,15 +305,18 @@ export const generateWithGemini = action({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) {
+      console.warn("[Gemini] Rejected: unauthenticated user");
       return { ok: false as const, error: "unauthenticated" };
     }
     const user = await ctx.runQuery(api.users.currentUser);
     if (user === null || user.blocked) {
+      console.warn(`[Gemini] Rejected: user=${userId} blocked=${user?.blocked}`);
       return { ok: false as const, error: "blocked" };
     }
 
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) {
+      console.error("[Gemini] No API key found (GEMINI_API_KEY or GOOGLE_API_KEY)");
       return { ok: false as const, error: "no-key" };
     }
 
@@ -324,17 +327,24 @@ export const generateWithGemini = action({
       args.rewriteMode ?? "",
     );
 
+    console.log(`[Gemini] Generating: template=${args.template} locale=${args.locale} rewrite=${args.rewriteMode ?? "none"} KB=active`);
+
     for (const model of MODELS) {
       try {
         const text = await callGemini(apiKey, model, prompt);
         if (text && text.trim().length > 0) {
+          console.log(`[Gemini] Success: model=${model} length=${text.length}`);
           return { ok: true as const, text, model };
         }
-      } catch {
+        console.warn(`[Gemini] Empty response from ${model}`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(`[Gemini] Failed: model=${model} error=${msg}`);
         // Try the next model (e.g. 404 for an unavailable model name).
       }
     }
 
+    console.error("[Gemini] All models failed — falling back to local engine");
     return { ok: false as const, error: "api-error" };
   },
 });

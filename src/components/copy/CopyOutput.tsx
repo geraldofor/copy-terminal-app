@@ -57,6 +57,10 @@ export interface CopyOutputProps {
   onRewrite: (mode?: string) => void;
   /** AI model that generated the text (undefined when local fallback). */
   engine?: string;
+  /** Whether the local fallback engine was used instead of Gemini. */
+  isFallback?: boolean;
+  /** Error reason when Gemini failed (e.g. 'no-key', 'unauthenticated', 'api-error'). */
+  engineError?: string;
   editing: boolean;
   editText: string;
   setEditText: (value: string) => void;
@@ -75,6 +79,8 @@ export function CopyOutput({
   onEdit,
   onRewrite,
   engine,
+  isFallback,
+  engineError,
   editing,
   editText,
   setEditText,
@@ -166,15 +172,40 @@ export function CopyOutput({
 
             {/* Rewrite mode selector */}
             <div className="ml-auto flex items-center gap-2">
-              {engine && (
+              {/* Engine diagnostics: shows Gemini model, local fallback, or error */}
+              <span
+                className={`flex min-w-0 items-center gap-1.5 font-mono text-[10px] ${
+                  engine && !isFallback
+                    ? "text-term-green"
+                    : isFallback && engineError
+                      ? "text-red-400"
+                      : "text-term-amber"
+                }`}
+                title={
+                  engine && !isFallback
+                    ? `${engine} • KB active`
+                    : engineError
+                      ? `Gemini: ${engineError} • using local fallback`
+                      : "Local fallback engine"
+                }
+              >
                 <span
-                  className="flex min-w-0 items-center gap-1.5 font-mono text-[10px] text-term-green"
-                  title={t("out.engineTip")}
-                >
-                  <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-term-green" />
-                  <span className="truncate">{engine}</span>
+                  className={`size-1.5 shrink-0 rounded-full ${
+                    engine && !isFallback
+                      ? "animate-pulse bg-term-green"
+                      : isFallback && engineError
+                        ? "bg-red-400"
+                        : "bg-term-amber"
+                  }`}
+                />
+                <span className="truncate">
+                  {engine && !isFallback
+                    ? engine
+                    : engineError
+                      ? `local · ${engineError}`
+                      : "local"}
                 </span>
-              )}
+              </span>
               <Select
                 onValueChange={(mode) => onRewrite(mode)}
                 disabled={busy || isTyping}
