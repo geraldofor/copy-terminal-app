@@ -27,26 +27,26 @@ const pt = {
   "nav.signup": "começar grátis",
   "nav.templates": "templates",
   "nav.how": "como-funciona",
-  "landing.badge": "copywriting com IA · sem cartão de crédito",
-  "landing.heroLine1": "Copy que vende,",
-  "landing.heroLine2": "não só",
-  "landing.heroAccent": "texto bonito",
+  "landing.badge": "copywriting com IA · sem setup",
+  "landing.heroLine1": "Seu briefing vira",
+  "landing.heroLine2": "copy que",
+  "landing.heroAccent": "vende",
   "landing.heroSub":
-    "Sistema de copywriting com IA para criadores de conteúdo e marketing. Gere anúncios para Meta/Google Ads, legendas, roteiros para Reels e e-mails de vendas — com estratégia, não só palavras.",
-  "landing.feature1": "Motor estratégico com IA — não só gera texto, interpreta seu produto e público",
+    "Preenche os dados do seu produto e público. A IA entrega uma copy completa — com títulos, texto, CTA e estratégia — pronta para publicar.",
+  "landing.feature1": "A IA interpreta seu produto e seleciona a melhor estratégia de copy",
   "landing.feature2": "Meta Ads, Google Ads, Instagram, Reels, E-mails — tudo em um só lugar",
-  "landing.feature3": "Reescreva, adapte e salve suas copies na biblioteca",
-  "landing.ctaFree": "começar agora — é grátis",
-  "landing.ctaTemplates": "ver templates",
+  "landing.feature3": "Reescreva em diferentes tons e adapte para cada canal",
+  "landing.ctaFree": "gerar minha primeira copy — é grátis",
+  "landing.ctaTemplates": "",
   "landing.note": "// 25 créditos grátis · sem cartão · cancele quando quiser",
   "landing.termFooter": "1 copy gerada · 24 créditos restantes",
   "landing.sectionTemplatesLabel": "// ls ~/templates",
   "landing.sectionTemplatesTitle": "Templates prontos para cada canal",
   "landing.sectionTemplatesDesc":
-    "Cada template tem campos próprios — público-alvo, tom de voz, objetivo — e devolve uma copy estruturada e pronta para publicar.",
+    "Você define o público, produto e tom. A IA entrega uma copy estruturada — com títulos, texto principal e CTA — pronta para publicar.",
   "landing.useTemplate": "usar template",
   "landing.sectionHowLabel": "// cat README.md",
-  "landing.sectionHowTitle": "Do briefing à publicação em 3 passos",
+  "landing.sectionHowTitle": "Como funciona: do briefing à copy em segundos",
   "landing.stepLabel": "passo {n}",
   "landing.step1.title": "Monte o briefing",
   "landing.step1.desc":
@@ -57,12 +57,12 @@ const pt = {
   "landing.step3.title": "Salve e publique",
   "landing.step3.desc":
     "Copie, edite ou salve no histórico. Tudo organizado na sua biblioteca.",
-  "landing.stat1.label": "templates profissionais",
+  "landing.stat1.label": "canais suportados",
   "landing.stat2.label": "créditos grátis",
-  "landing.stat3.label": "idiomas suportados",
+  "landing.stat3.label": "idiomas",
   "landing.stat4.label": "sem mensalidade",
   "landing.ctaLabel": "// pronto para rodar?",
-  "landing.ctaTitle": "Comece grátis — sua próxima copy está a um comando de distância",
+  "landing.ctaTitle": "Sua próxima copy pronta para publicar está a um briefing de distância",
   "landing.setup1": "criando conta gratuita … ok",
   "landing.setup2": "créditos de boas-vindas: +25",
   "landing.setup3": "sem cartão de crédito · cancele quando quiser",
@@ -73,23 +73,24 @@ const pt = {
   "landing.trust2": "// gera em português, inglês e espanhol",
   "landing.trust3": "// sem fidelidade — compre créditos quando quiser",
   "landing.footerTagline":
-    "copywriting com IA para quem vende online",
+    "do briefing à copy pronta para publicar",
   "landing.heroText": `$ copyforge run meta-ads --tone persuasivo
-› modelo de linguagem … ok
-› público: criadores de conteúdo … ok
+› público: profissionais de marketing … ok
+› produto: curso de automação … ok
 › tom: persuasivo … ok
 
 ## 3 TÍTULOS (A/B/C)
-- Copy que converte, sem chute.
-- Para criadores que querem vender mais.
-- Chega de perder tempo — copyforge resolve.
+- Pare de perder tempo com copy por chute.
+- Automatize sua copy — IA que interpreta seu produto.
+- Copy que vende, sem adivinhar o público.
 
 ## TEXTO PRINCIPAL
-Escreva anúncios, legendas e e-mails que
-vendem — em segundos, não em horas.
+A IA identifica o público, seleciona o melhor
+ângulo e entrega uma copy estruturada — com
+benefícios, prova social e CTA.
 
 ## CTA
-- Comece grátis hoje →`,
+- Quero gerar minha copy →`,
 
   "nav.plans": "planos",
   "nav.faq": "faq",
@@ -408,26 +409,26 @@ const en: UiStrings = {
   "nav.signup": "start free",
   "nav.templates": "templates",
   "nav.how": "how-it-works",
-  "landing.badge": "AI copywriting · no credit card required",
-  "landing.heroLine1": "Copy that sells,",
-  "landing.heroLine2": "not just",
-  "landing.heroAccent": "nice words",
+  "landing.badge": "AI copywriting · no setup",
+  "landing.heroLine1": "Your brief becomes",
+  "landing.heroLine2": "copy that",
+  "landing.heroAccent": "converts",
   "landing.heroSub":
-    "AI copywriting system for creators and marketers. Generate Meta/Google Ads, captions, Reels scripts, and sales emails — with strategy, not just words.",
-  "landing.feature1": "Strategic AI engine — interprets your product and audience, not just generates text",
+    "Enter your product details and audience. The AI delivers a complete copy — with headlines, body, CTA, and strategy — ready to publish.",
+  "landing.feature1": "AI interprets your product and selects the best copy strategy",
   "landing.feature2": "Meta Ads, Google Ads, Instagram, Reels, Emails — all in one place",
-  "landing.feature3": "Rewrite, adapt, and save copies to your library",
-  "landing.ctaFree": "start now — it's free",
-  "landing.ctaTemplates": "view templates",
+  "landing.feature3": "Rewrite in different tones and adapt for every channel",
+  "landing.ctaFree": "generate my first copy — it's free",
+  "landing.ctaTemplates": "",
   "landing.note": "// 25 free credits · no card · cancel anytime",
   "landing.termFooter": "1 copy generated · 24 credits left",
   "landing.sectionTemplatesLabel": "// ls ~/templates",
   "landing.sectionTemplatesTitle": "Ready-made templates for every channel",
   "landing.sectionTemplatesDesc":
-    "Each template has its own fields — target audience, tone of voice, goal — and returns structured copy that's ready to publish.",
+    "You define the audience, product, and tone. The AI delivers structured copy — with headlines, body text, and CTA — ready to publish.",
   "landing.useTemplate": "use template",
   "landing.sectionHowLabel": "// cat README.md",
-  "landing.sectionHowTitle": "From brief to publication in 3 steps",
+  "landing.sectionHowTitle": "How it works: from brief to copy in seconds",
   "landing.stepLabel": "step {n}",
   "landing.step1.title": "Build the brief",
   "landing.step1.desc":
@@ -438,12 +439,12 @@ const en: UiStrings = {
   "landing.step3.title": "Save and publish",
   "landing.step3.desc":
     "Copy, edit or save to history. Everything organized in your library.",
-  "landing.stat1.label": "professional templates",
+  "landing.stat1.label": "channels supported",
   "landing.stat2.label": "free credits",
-  "landing.stat3.label": "languages supported",
+  "landing.stat3.label": "languages",
   "landing.stat4.label": "no subscription",
   "landing.ctaLabel": "// ready to run?",
-  "landing.ctaTitle": "Start free — your next copy is one command away",
+  "landing.ctaTitle": "Your next copy ready to publish is one brief away",
   "landing.setup1": "creating free account … ok",
   "landing.setup2": "welcome credits: +25",
   "landing.setup3": "no credit card · cancel anytime",
@@ -454,23 +455,24 @@ const en: UiStrings = {
   "landing.trust2": "// generates in Portuguese, English, and Spanish",
   "landing.trust3": "// no lock-in — buy credits when you want",
   "landing.footerTagline":
-    "AI copywriting for online sellers",
-  "landing.heroText": `$ copyforge run meta-ads --tone persuasivo
-› language model … ok
-› audience: content creators … ok
+    "from brief to copy ready to publish",
+  "landing.heroText": `$ copyforge run meta-ads --tone persuasive
+› audience: marketing professionals … ok
+› product: automation course … ok
 › tone: persuasive … ok
 
 ## 3 HEADLINES (A/B/C)
-- Copy that converts, no guesswork.
-- For creators who want to sell more.
-- Stop wasting time — copyforge delivers.
+- Stop guessing your copy — let AI read your product.
+- Automate your copy — AI that understands your audience.
+- Copy that sells, without guessing who you're talking to.
 
 ## MAIN TEXT
-Write ads, captions and emails that
-sell — in seconds, not hours.
+The AI identifies your audience, selects the best
+angle, and delivers structured copy — with benefits,
+social proof, and CTA.
 
 ## CTA
-- Start free today →`,
+- I want to generate my copy →`,
 
   "nav.plans": "plans",
   "nav.faq": "faq",
@@ -786,26 +788,26 @@ const es: UiStrings = {
   "nav.signup": "empezar gratis",
   "nav.templates": "plantillas",
   "nav.how": "como-funciona",
-  "landing.badge": "copywriting con IA · ES",
-  "landing.heroLine1": "Escribe copy",
-  "landing.heroLine2": "que",
-  "landing.heroAccent": "convierte",
+  "landing.badge": "copywriting con IA · sin configuración",
+  "landing.heroLine1": "Tu briefing se convierte en",
+  "landing.heroLine2": "copy que",
+  "landing.heroAccent": "vende",
   "landing.heroSub":
-    "La terminal de copywriting para creadores de contenido y profesionales de marketing. Genera anuncios, leyendas, guiones y correos en segundos — con el tono adecuado para cada marca.",
-  "landing.feature1": "4 plantillas profesionales de copy",
-  "landing.feature2": "25 créditos gratis para empezar",
-  "landing.feature3": "historial ilimitado de textos guardados",
-  "landing.ctaFree": "crear cuenta gratis",
-  "landing.ctaTemplates": "ver plantillas",
-  "landing.note": "// sin tarjeta de crédito · cancela cuando quieras",
+    "Ingresa los datos de tu producto y público. La IA entrega un copy completo — con títulos, texto, CTA y estrategia — listo para publicar.",
+  "landing.feature1": "La IA interpreta tu producto y selecciona la mejor estrategia de copy",
+  "landing.feature2": "Meta Ads, Google Ads, Instagram, Reels, Emails — todo en un solo lugar",
+  "landing.feature3": "Reescribe en diferentes tonos y adapta para cada canal",
+  "landing.ctaFree": "generar mi primer copy — es gratis",
+  "landing.ctaTemplates": "",
+  "landing.note": "// 25 créditos gratis · sin tarjeta · cancela cuando quieras",
   "landing.termFooter": "1 copy generada · 24 créditos restantes",
   "landing.sectionTemplatesLabel": "// ls ~/templates",
   "landing.sectionTemplatesTitle": "Plantillas listas para cada canal",
   "landing.sectionTemplatesDesc":
-    "Cada plantilla tiene sus propios campos — público objetivo, tono de voz, objetivo — y devuelve un copy estructurado y listo para publicar.",
+    "Defines el público, producto y tono. La IA entrega un copy estructurado — con títulos, texto principal y CTA — listo para publicar.",
   "landing.useTemplate": "usar plantilla",
   "landing.sectionHowLabel": "// cat README.md",
-  "landing.sectionHowTitle": "Del briefing a la publicación en 3 pasos",
+  "landing.sectionHowTitle": "Cómo funciona: del briefing al copy en segundos",
   "landing.stepLabel": "paso {n}",
   "landing.step1.title": "Arma el briefing",
   "landing.step1.desc":
@@ -816,39 +818,40 @@ const es: UiStrings = {
   "landing.step3.title": "Guarda y publica",
   "landing.step3.desc":
     "Copia, edita o guarda en el historial. Todo organizado en tu biblioteca.",
-  "landing.stat1.label": "copies generadas",
-  "landing.stat2.label": "plantillas profesionales",
-  "landing.stat3.label": "créditos gratis",
-  "landing.stat4.label": "tiempo en línea",
+  "landing.stat1.label": "canales soportados",
+  "landing.stat2.label": "créditos gratis",
+  "landing.stat3.label": "idiomas",
+  "landing.stat4.label": "sin mensualidad",
   "landing.ctaLabel": "// ¿listo para ejecutar?",
-  "landing.ctaTitle": "Tu próximo copy está a un comando de distancia",
+  "landing.ctaTitle": "Tu próximo copy listo para publicar está a un briefing de distancia",
   "landing.setup1": "creando cuenta gratuita … ok",
   "landing.setup2": "créditos de bienvenida: +25",
   "landing.setup3": "sin tarjeta de crédito · cancela cuando quieras",
-  "landing.ctaButton": "crear cuenta gratis",
+  "landing.ctaButton": "crear cuenta y generar mi primer copy",
   "landing.hasAccount": "¿ya tienes cuenta?",
   "landing.ctaSignin": "entrar →",
   "landing.trust1": "// sin configuración técnica",
   "landing.trust2": "// genera en portugués, inglés y español",
   "landing.trust3": "// sin compromiso — compra créditos cuando quieras",
   "landing.footerTagline":
-    "hecho para creadores de contenido y profesionales de marketing",
+    "del briefing al copy listo para publicar",
   "landing.heroText": `$ copyforge run meta-ads --tone persuasivo
-› modelo de lenguaje … ok
-› público: creadores de contenido … ok
+› público: profesionales de marketing … ok
+› producto: curso de automatización … ok
 › tono: persuasivo … ok
 
 ## 3 TÍTULOS (A/B/C)
-- Copy que convierte, sin adivinar.
-- Para creadores que quieren vender más.
-- Basta de perder tiempo — copyforge resuelve.
+- Deja de adivinar tu copy — deja que la IA lea tu producto.
+- Automatiza tu copy — IA que entiende tu público.
+- Copy que vende, sin adivinar con quién hablas.
 
 ## TEXTO PRINCIPAL
-Escribe anuncios, leyendas y correos que
-vendan — en segundos, no en horas.
+La IA identifica tu público, selecciona el mejor
+ángulo y entrega un copy estructurado — con
+beneficios, prueba social y CTA.
 
 ## CTA
-- Empieza gratis hoy →`,
+- Quiero generar mi copy →`,
 
   "nav.plans": "planes",
   "nav.faq": "faq",
