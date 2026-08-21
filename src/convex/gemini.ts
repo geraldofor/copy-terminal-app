@@ -19,7 +19,7 @@ import { getKnowledgeForPrompt } from "../lib/copy-knowledge-base";
  */
 
 /** Models to try in order (cheapest / most generous free tier first). */
-const MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
+const MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3.1-flash-lite"];
 
 const LOCALE_NAMES: Record<string, string> = {
   pt: "Brazilian Portuguese",
@@ -282,7 +282,14 @@ async function callGemini(
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
-    throw new Error(`Gemini ${model} returned HTTP ${res.status}`);
+    let errorBody = "";
+    try {
+      errorBody = await res.text();
+    } catch {
+      // ignore
+    }
+    console.error(`[Gemini] HTTP ${res.status} from ${model}: ${errorBody.slice(0, 500)}`);
+    throw new Error(`Gemini ${model} returned HTTP ${res.status}: ${errorBody.slice(0, 200)}`);
   }
   const data = (await res.json()) as GeminiResponse;
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
@@ -340,7 +347,6 @@ export const generateWithGemini = action({
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.warn(`[Gemini] Failed: model=${model} error=${msg}`);
-        // Try the next model (e.g. 404 for an unavailable model name).
       }
     }
 
