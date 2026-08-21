@@ -53,11 +53,18 @@ export default function Landing() {
     },
   ];
 
+  /* Trust badges shown below hero CTA */
+  const trustBadges = [
+    t("landing.trust1"),
+    t("landing.trust2"),
+    t("landing.trust3"),
+  ];
+
   const stats = [
-    { value: "+40k", label: t("landing.stat1.label") },
-    { value: "4", label: t("landing.stat2.label") },
-    { value: "25", label: t("landing.stat3.label") },
-    { value: "99,9%", label: t("landing.stat4.label") },
+    { value: "4", label: t("landing.stat1.label") },
+    { value: "25", label: t("landing.stat2.label") },
+    { value: "3", label: t("landing.stat3.label") },
+    { value: "$0", label: t("landing.stat4.label") },
   ];
 
   const faqs = [
@@ -153,6 +160,13 @@ export default function Landing() {
             <p className="mt-4 font-mono text-[11px] text-muted-foreground">
               <span className="text-term-green">//</span> {t("landing.note")}
             </p>
+            <div className="mt-3 space-y-1">
+              {trustBadges.map((badge) => (
+                <p key={badge} className="font-mono text-[10px] text-muted-foreground/70">
+                  <span className="text-term-dim">$</span> {badge}
+                </p>
+              ))}
+            </div>
           </motion.div>
 
           <motion.div
