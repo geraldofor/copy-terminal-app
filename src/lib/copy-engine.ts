@@ -5,7 +5,7 @@
  * concatenating fields. Uses a structured Knowledge Base to select frameworks,
  * angles, headline patterns, hooks, and CTAs appropriate for each context.
  *
- * Flow: Brief → Classify → Select Strategy → Generate → Validate → Output
+ * Flow: Brief → Classify → Select Strategy → Generate → Validate → Fact Guard → Output
  */
 
 import type { Locale } from "@/i18n/strings";
@@ -1456,6 +1456,348 @@ function fixValidationIssues(output: string, issues: string[], brief: Brief, loc
 }
 
 /* ======================================================================
+   FACT GUARD — CLAIM VALIDATION
+   ======================================================================
+
+   Differentiates between:
+   - STRATEGIC KNOWLEDGE (frameworks, angles, patterns → can be used freely)
+   - PRODUCT FACTS (only if present in the briefing)
+
+   Any factual claim about the product that cannot be traced to the briefing
+   is either removed or reformulated as a possibility/potential benefit.
+   ====================================================================== */
+
+interface BriefFacts {
+  tokens: string[];
+  rawFields: string[];
+}
+
+function extractBriefFacts(brief: Brief): BriefFacts {
+  const fields = [
+    brief.product,
+    brief.audience,
+    brief.differentiator,
+    brief.offer,
+    brief.deadline,
+    brief.cta,
+    brief.company,
+    brief.topic,
+    brief.goal,
+  ].filter((x): x is string => !!x);
+
+  const tokens = fields
+    .join(" ")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 3);
+
+  return { tokens, rawFields: fields };
+}
+
+interface FactGuardPattern {
+  regex: RegExp;
+  type: string;
+  fixable: boolean;
+  rephrase: Record<Locale, string>;
+}
+
+const FACT_GUARD_PATTERNS: FactGuardPattern[] = [
+  // --- Market claims ---
+  {
+    regex: /o mercado (valoriza|est[aá] pedindo|reconhece|procura|busca|quer|precisa)/i,
+    type: "MARKET_CLAIM",
+    fixable: true,
+    rephrase: {
+      pt: "profissionais com essa habilidade se destacam",
+      en: "professionals with this skill stand out",
+      es: "los profesionales con esta habilidad destacan",
+    },
+  },
+  {
+    regex: /the market (values|is asking for|recognizes|seeks|wants|needs)/i,
+    type: "MARKET_CLAIM",
+    fixable: true,
+    rephrase: {
+      pt: "profissionais com essa habilidade se destacam",
+      en: "professionals with this skill stand out",
+      es: "los profesionales con esta habilidad destacan",
+    },
+  },
+  {
+    regex: /el mercado (valoriza|est[aá] pidiendo|reconoce|busca|quiere|necesita)/i,
+    type: "MARKET_CLAIM",
+    fixable: true,
+    rephrase: {
+      pt: "profissionais com essa habilidade se destacam",
+      en: "professionals with this skill stand out",
+      es: "los profesionales con esta habilidad destacan",
+    },
+  },
+
+  // --- Statistics / percentages ---
+  {
+    regex: /\d+%\s*(de\s+)?(aumento|increase|crescimento|result|ganho|reduction|redu[çc][ãa]o|melhoria|improvement)/i,
+    type: "STATISTIC",
+    fixable: true,
+    rephrase: {
+      pt: "pode ajudar a melhorar resultados",
+      en: "can help improve results",
+      es: "puede ayudar a mejorar resultados",
+    },
+  },
+  {
+    regex: /ctr\s*(superior|maior|higher|better|mejor)/i,
+    type: "METRIC_CLAIM",
+    fixable: true,
+    rephrase: {
+      pt: "resultados mais relevantes",
+      en: "more relevant results",
+      es: "resultados más relevantes",
+    },
+  },
+
+  // --- Specific outcomes not in briefing ---
+  {
+    regex: /transform[aã]o?\s+(em|into|en)\s+(um|uma|an|el|la)\s+(analista|especialista|profissional|expert|líder|manager|developer|programador|engenheiro)/i,
+    type: "SPECIFIC_OUTCOME",
+    fixable: true,
+    rephrase: {
+      pt: "desenvolver uma nova habilidade profissional",
+      en: "develop a new professional skill",
+      es: "desarrollar una nueva habilidad profesional",
+    },
+  },
+
+  // --- Specific features not in briefing ---
+  {
+    regex: /dashboard\s+(automatizado|autom[aá]tico|inteligente|personalizado)/i,
+    type: "FEATURE_CLAIM",
+    fixable: true,
+    rephrase: {
+      pt: "ferramentas que simplificam seu dia a dia",
+      en: "tools that simplify your daily routine",
+      es: "herramientas que simplifican tu día a día",
+    },
+  },
+  {
+    regex: /relat[oó]rios?\s+(automatizados?|inteligentes?|em\s+tempo\s+real)/i,
+    type: "FEATURE_CLAIM",
+    fixable: true,
+    rephrase: {
+      pt: "informações organizadas de forma prática",
+      en: "information organized practically",
+      es: "información organizada de forma práctica",
+    },
+  },
+
+  // --- Specific results ---
+  {
+    regex: /reduz\s+(erros?|falhas?|perdas?|desperd[ií]cios?)/i,
+    type: "RESULT_CLAIM",
+    fixable: true,
+    rephrase: {
+      pt: "pode ajudar a evitar problemas comuns",
+      en: "can help avoid common issues",
+      es: "puede ayudar a evitar problemas comunes",
+    },
+  },
+  {
+    regex: /aumenta\s+(a\s+)?(produtividade|efici[eê]ncia|receita|lucro|faturamento|vendas|results)/i,
+    type: "RESULT_CLAIM",
+    fixable: true,
+    rephrase: {
+      pt: "pode contribuir para melhores resultados",
+      en: "can contribute to better results",
+      es: "puede contribuir a mejores resultados",
+    },
+  },
+
+  // --- Invented proof ---
+  {
+    regex: /comprovad[oa]|comprobado|proven|estudos?\s+mostram|research\s+show|est[aá]\s+comprovado/i,
+    type: "INVENTED_PROOF",
+    fixable: false,
+    rephrase: { pt: "", en: "", es: "" },
+  },
+  {
+    regex: /milhares?\s+de|thousands?\s+of|miles?\s+de/i,
+    type: "INVENTED_PROOF",
+    fixable: false,
+    rephrase: { pt: "", en: "", es: "" },
+  },
+  {
+    regex: /depoimentos?|testimonials?|testimonios?/i,
+    type: "INVENTED_PROOF",
+    fixable: false,
+    rephrase: { pt: "", en: "", es: "" },
+  },
+  {
+    regex: /certificad[oa]|certified|certificado/i,
+    type: "INVENTED_CREDENTIAL",
+    fixable: false,
+    rephrase: { pt: "", en: "", es: "" },
+  },
+];
+
+function isClaimSupportedByBrief(
+  claimText: string,
+  facts: BriefFacts,
+): boolean {
+  const claimLower = claimText.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 4);
+
+  if (claimLower.length === 0) return true;
+
+  const overlap = claimLower.filter((w) => facts.tokens.includes(w));
+  return overlap.length / claimLower.length >= 0.3;
+}
+
+function removeClaim(text: string, regex: RegExp): string {
+  let result = text;
+  const match = result.match(regex);
+  if (!match) return result;
+
+  const escapedSource = regex.source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const sentenceRegex = new RegExp(
+    `[^.!?]*${escapedSource}[^.!?]*[.!?]`,
+    "gi",
+  );
+  const sentenceMatch = result.match(sentenceRegex);
+  if (sentenceMatch && sentenceMatch.length > 0) {
+    for (const s of sentenceMatch) {
+      result = result.replace(s, "");
+    }
+  } else {
+    result = result.replace(regex, "");
+  }
+
+  result = result.replace(/\s{2,}/g, " ").replace(/\s+([,.!?])/g, "$1");
+  return result;
+}
+
+function rephraseClaim(
+  text: string,
+  regex: RegExp,
+  rephrase: Record<Locale, string>,
+  locale: Locale,
+): string {
+  const replacement = rephrase[locale] || rephrase.pt;
+  if (!replacement) return removeClaim(text, regex);
+  return text.replace(regex, replacement);
+}
+
+function validateAndGuardClaims(
+  output: string,
+  brief: Brief,
+  _classified: ClassifiedBrief,
+): string {
+  const facts = extractBriefFacts(brief);
+  let guarded = output;
+
+  for (const pattern of FACT_GUARD_PATTERNS) {
+    const match = guarded.match(pattern.regex);
+    if (!match) continue;
+
+    const matchedText = match[0];
+
+    if (isClaimSupportedByBrief(matchedText, facts)) {
+      continue;
+    }
+
+    if (pattern.fixable && Object.values(pattern.rephrase).some((v) => v)) {
+      guarded = rephraseClaim(guarded, pattern.regex, pattern.rephrase, brief.locale);
+    } else {
+      guarded = removeClaim(guarded, pattern.regex);
+    }
+  }
+
+  guarded = guardStrategySection(guarded, brief, facts);
+  guarded = guardTipSection(guarded, brief);
+
+  return guarded;
+}
+
+function guardStrategySection(
+  output: string,
+  brief: Brief,
+  _facts: BriefFacts,
+): string {
+  const lines = output.split("\n");
+  const strategyStart = lines.findIndex((l) =>
+    /^##\s+(ESTRAT[ÉE]GIA|STRATEGY|ESTRATEGIA)/i.test(l),
+  );
+  if (strategyStart === -1) return output;
+
+  const strategyEnd = lines.findIndex(
+    (l, i) => i > strategyStart && /^##\s+/.test(l),
+  );
+  const endIdx = strategyEnd === -1 ? lines.length : strategyEnd;
+
+  const allowedPatterns = [
+    /objetivo:|goal:|objetivo:/i,
+    /p[uú]blico:|audience:|p[uú]blico:/i,
+    /tom:|tone:|tono:/i,
+    /formato:|format:|formato:/i,
+    /framework:/i,
+  ];
+
+  const guardedLines = lines.slice(strategyStart, endIdx).filter((line) => {
+    if (/^##\s+/.test(line)) return true;
+    if (line.trim() === "") return true;
+    return allowedPatterns.some((p) => p.test(line));
+  });
+
+  return [
+    ...lines.slice(0, strategyStart),
+    ...guardedLines,
+    ...lines.slice(endIdx),
+  ].join("\n");
+}
+
+function guardTipSection(
+  output: string,
+  brief: Brief,
+): string {
+  const lines = output.split("\n");
+  const tipStart = lines.findIndex((l) =>
+    /^##\s+(DICA|TIP|CONSEJO)/i.test(l),
+  );
+  if (tipStart === -1) return output;
+
+  const tipEnd = lines.findIndex(
+    (l, i) => i > tipStart && /^##\s+/.test(l),
+  );
+  const endIdx = tipEnd === -1 ? lines.length : tipEnd;
+
+  const tipLines = lines.slice(tipStart, endIdx);
+  for (const pattern of FACT_GUARD_PATTERNS) {
+    const tipText = tipLines.join(" ");
+    if (pattern.regex.test(tipText)) {
+      const genericTip = brief.locale === "pt"
+        ? "- Foque no benefício principal nos primeiros segundos e mantenha o CTA visível."
+        : brief.locale === "es"
+          ? "- Enfócate en el beneficio principal en los primeros segundos y mantén el CTA visible."
+          : "- Focus on the main benefit in the first few seconds and keep the CTA visible.";
+      return [
+        ...lines.slice(0, tipStart),
+        `## ${tipLines[0].replace(/^##\s+/, "")}`,
+        genericTip,
+        ...lines.slice(endIdx),
+      ].join("\n");
+    }
+  }
+
+  return output;
+}
+
+/* ======================================================================
    MAIN ENTRY POINT
    ====================================================================== */
 
@@ -1532,6 +1874,9 @@ export function generateLocal(
   if (!validation.passed) {
     output = fixValidationIssues(output, validation.issues, brief, locale);
   }
+
+  // 7. Fact Guard — validate and sanitize unsupported claims
+  output = validateAndGuardClaims(output, brief, classified);
 
   return { text: output, usedKB: true };
 }
