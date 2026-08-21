@@ -61,6 +61,8 @@ export interface CopyOutputProps {
   isFallback?: boolean;
   /** Error reason when Gemini failed (e.g. 'no-key', 'unauthenticated', 'api-error'). */
   engineError?: string;
+  /** Whether the Knowledge Base was used in generation. */
+  kbUsed?: boolean;
   editing: boolean;
   editText: string;
   setEditText: (value: string) => void;
@@ -81,6 +83,7 @@ export function CopyOutput({
   engine,
   isFallback,
   engineError,
+  kbUsed,
   editing,
   editText,
   setEditText,
@@ -128,16 +131,14 @@ export function CopyOutput({
                   </>
                 ) : (
                   <>
-                    <span className={`size-1.5 rounded-full ${engineError ? "bg-red-400" : "bg-term-amber"}`} />
-                    <span className={`font-bold ${engineError ? "text-red-400" : "text-term-amber"}`}>
-                      LOCAL FALLBACK{engineError ? ` — ${engineError.toUpperCase()}` : ""}
-                    </span>
+                    <span className="size-1.5 rounded-full bg-term-green" />
+                    <span className="font-bold text-term-green">LOCAL ENGINE</span>
                   </>
                 )}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="text-term-dim">KNOWLEDGE BASE:</span>
-                {engine && !isFallback ? (
+                {kbUsed ? (
                   <span className="font-bold text-term-green">ACTIVE</span>
                 ) : (
                   <span className="font-bold text-term-amber">NOT USED</span>

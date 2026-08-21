@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { makeCopyTitle, toneLabel, toneOf, type CopyTemplate } from "@/lib/copy-templates";
+import { generateLocal } from "@/lib/copy-engine";
 import type { CopyDoc, Usage } from "@/lib/types";
 import { copyToClipboard } from "@/lib/utils";
 import { useI18n } from "@/i18n";
@@ -63,6 +64,7 @@ export function GeneratorPanel({
   const [lastValues, setLastValues] = useState<Record<string, string>>({});    const [engine, setEngine] = useState<string | undefined>();
     const [isFallback, setIsFallback] = useState(false);
     const [engineError, setEngineError] = useState<string | undefined>();
+    const [kbUsed, setKbUsed] = useState(false);
     const timeouts = useRef<number[]>([]);
 
   const credits = usage?.credits ?? 0;
@@ -123,6 +125,7 @@ export function GeneratorPanel({
     setEngine(undefined);
     setIsFallback(false);
     setEngineError(undefined);
+    setKbUsed(false);
 
     try {
       await consumeCredits({ amount: 1 });
@@ -150,12 +153,14 @@ export function GeneratorPanel({
       );
     });
 
-    /* Real AI: call Gemini through the server. Falls back to the local
-       engine automatically when the key is missing or the API fails. */
-    let output = template.generate(vals, locale);
+    /* Generation flow: try Gemini first, fall back to local strategic engine.
+       The local engine uses the Knowledge Base to interpret the brief,
+       select frameworks, angles, and generate structured copy. */
+    let output = "";
     let usedEngine: string | undefined;
     let fallback = true;
     let errorReason: string | undefined;
+    let kbUsed = false;
     try {
       const ai = await generateWithGemini({
         template: template.id,
@@ -167,16 +172,25 @@ export function GeneratorPanel({
         output = ai.text;
         usedEngine = ai.model;
         fallback = false;
+        kbUsed = true;
       } else if (!ai.ok && "error" in ai) {
         errorReason = ai.error;
       }
     } catch (err) {
       errorReason = err instanceof Error ? err.message : "action-failed";
     }
+    /* If Gemini failed, use the local strategic engine instead of
+       the old string-concatenation fallback. */
+    if (fallback) {
+      const local = generateLocal(template.id, vals, locale);
+      output = local.text;
+      kbUsed = local.usedKB;
+    }
     setResult(output);
     setEngine(usedEngine);
     setIsFallback(fallback);
     setEngineError(errorReason);
+    setKbUsed(kbUsed);
     setPhase("typing");
   };
 
@@ -376,6 +390,7 @@ export function GeneratorPanel({
           engine={engine}
           isFallback={isFallback}
           engineError={engineError}
+          kbUsed={kbUsed}
           editing={editing}
           editText={editText}
           setEditText={setEditText}
