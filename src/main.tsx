@@ -17,6 +17,8 @@ const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const Plans = lazy(() => import("./pages/Plans.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const Privacy = lazy(() => import("./pages/Privacy.tsx"));
+const Terms = lazy(() => import("./pages/Terms.tsx"));
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
@@ -94,6 +96,8 @@ const ROUTE_TITLES: Record<string, string> = {
   "/dashboard": "Painel — CopyForge",
   "/plans": "Planos e Créditos — CopyForge",
   "/admin": "Admin — CopyForge",
+  "/privacy": "Privacy Policy — CopyForge",
+  "/terms": "Terms of Service — CopyForge",
 };
 
 function RouteSyncer() {
@@ -138,6 +142,8 @@ createRoot(document.getElementById("root")!).render(
                   path="/auth"
                   element={<AuthPage redirectAfterAuth="/dashboard" />}
                 />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
                 <Route
                   path="/dashboard"
                   element={

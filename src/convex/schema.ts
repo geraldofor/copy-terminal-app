@@ -37,6 +37,13 @@ const schema = defineSchema(
       creditsTotal: v.optional(v.number()), // total credits on the current plan
       generatedTotal: v.optional(v.number()), // total copies generated (all time)
 
+      // abuse protection: welcome credits are granted once, only after the
+      // user verifies their email via OTP (never for anonymous visitors)
+      welcomeCreditsGranted: v.optional(v.boolean()),
+      // daily generation limit tracking (UTC date key + count)
+      usageDate: v.optional(v.string()), // e.g. "2026-09-16"
+      dailyGenerated: v.optional(v.number()), // copies generated on usageDate
+
       // marketing / traffic attribution (set once at signup)
       signupSource: v.optional(v.string()), // utm_source or referrer host, e.g. "google", "instagram.com"
       signupReferrer: v.optional(v.string()), // full referrer URL when available

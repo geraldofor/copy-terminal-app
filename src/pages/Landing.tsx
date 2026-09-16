@@ -547,6 +547,14 @@ export default function Landing() {
           <p>
             <span className="text-term-green">~/</span>copyforge · © 2026
           </p>
+          <div className="flex items-center gap-4">
+            <a href="/privacy" className="transition-colors hover:text-foreground">
+              privacy
+            </a>
+            <a href="/terms" className="transition-colors hover:text-foreground">
+              terms
+            </a>
+          </div>
           <p className="text-term-dim">{t("landing.footerTagline")}</p>
         </div>
       </footer>

@@ -5,6 +5,12 @@ import { getCurrentUser } from "./users";
 
 /** Free credits granted to every new account. */
 export const DEFAULT_CREDITS = 25;
+/**
+ * Abuse protection: maximum generations per user per UTC day, regardless of
+ * credit balance. Purchased credits spend slower than this limit for normal
+ * use; it only caps burst/automated abuse.
+ */
+export const DAILY_GENERATION_LIMIT = 10;
 
 /**
  * Current plan summary for the signed-in user:
@@ -37,6 +43,9 @@ export const getUsage = query({
  * but is IGNORED — the mutation always deducts exactly 1 credit. This
  * prevents client-side abuse where a malicious caller could pass negative
  * values or zero to skip payment.
+ *
+ * ABUSE PROTECTION: also enforces a daily generation limit (UTC day) per
+ * user, regardless of credit balance.
  */
 export const consumeCredits = mutation({
   args: { amount: v.optional(v.number()) },
@@ -52,6 +61,16 @@ export const consumeCredits = mutation({
     if (user.blocked) {
       throw new ConvexError("Conta bloqueada. Entre em contato com o suporte.");
     }
+    // Daily generation limit (UTC day). Applies to every account type.
+    const today = new Date().toISOString().slice(0, 10);
+    const usedToday =
+      user.usageDate === today ? (user.dailyGenerated ?? 0) : 0;
+    if (usedToday >= DAILY_GENERATION_LIMIT) {
+      throw new ConvexError(
+        `Limite diário de ${DAILY_GENERATION_LIMIT} gerações atingido. Tente novamente amanhã.`,
+      );
+    }
+    // Legacy accounts without an explicit credits field keep the old default
     const current = user.credits ?? DEFAULT_CREDITS;
     if (current <= 0) {
       throw new ConvexError(
@@ -64,6 +83,8 @@ export const consumeCredits = mutation({
       credits: next,
       creditsTotal: user.creditsTotal ?? DEFAULT_CREDITS,
       generatedTotal: (user.generatedTotal ?? 0) + 1,
+      usageDate: today,
+      dailyGenerated: usedToday + 1,
     });
     return { credits: next };
   },

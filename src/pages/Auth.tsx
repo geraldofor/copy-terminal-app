@@ -12,7 +12,7 @@ import { LanguageSelect } from "@/components/LanguageSelect";
 import { captureTrafficSource } from "@/lib/traffic";
 import { TerminalSquare } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { TerminalWindow } from "@/components/copy/Terminal";
 
 interface AuthProps {
@@ -243,15 +243,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           )}
 
           <p className="mt-6 border-t pt-4 text-center font-mono text-[10px] text-muted-foreground">
-            secure_channel:{" "}
-            <a
-              href="https://freebuff.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-term-green underline underline-offset-4 hover:text-term-green-deep"
-            >
-              freebuff.com
-            </a>
+            secure_channel ·{" "}
+            <Link to="/privacy" className="text-term-green underline underline-offset-4 hover:text-term-green-deep">
+              privacy
+            </Link>{" "}·{" "}
+            <Link to="/terms" className="text-term-green underline underline-offset-4 hover:text-term-green-deep">
+              terms
+            </Link>
           </p>
         </TerminalWindow>
       </div>
